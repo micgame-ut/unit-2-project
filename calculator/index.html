@@ -153,7 +153,7 @@
     color: var(--text-secondary); padding-bottom: 0.45rem; border-bottom: 1px solid var(--text);
   }
   .aipf-rows-head span:nth-child(3) { text-align: center; }
-  .aipf-rowwrap { padding: 0.45rem 0; border-bottom: 1px solid var(--border); }
+  .aipf-rowwrap, .aipf-habitwrap { padding: 0.45rem 0; border-bottom: 1px solid var(--border); }
   .aipf-row { display: grid; grid-template-columns: 1fr 1.3fr auto 1.1rem; gap: 0.6rem; align-items: center; }
   .aipf-row-meta { font-family: var(--font-body); font-size: 0.67rem; color: var(--dim); margin-top: 0.3rem; font-variant-numeric: tabular-nums; }
   .aipf-empty { color: var(--dim); padding: 0.8rem 0; font-size: 0.9rem; }
@@ -189,6 +189,15 @@
   }
   .aipf-addrow:hover { color: var(--accent-hover); }
   .aipf-addrows { display: flex; flex-wrap: wrap; column-gap: 1.2rem; }
+  /* Digital habits: name | device or camera | hours */
+  .aipf-habit-row { display: grid; grid-template-columns: 9rem minmax(0, 15rem) auto; justify-content: start; gap: 0.6rem; align-items: center; }
+  .aipf-habit-name { font-size: 0.92rem; color: var(--text); }
+  @media (max-width: 560px) {
+    .aipf-habit-row { grid-template-columns: 1fr auto; grid-template-areas: "name hours" "opt opt"; }
+    .aipf-habit-name { grid-area: name; }
+    .aipf-habit-row .aipf-rsel { grid-area: opt; }
+    .aipf-habit-row .aipf-stepper { grid-area: hours; }
+  }
   /* Project totals */
   .aipf-proj-in { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.8rem 1.4rem; margin-bottom: 1rem; }
   .aipf-proj-field { display: flex; flex-direction: column; gap: 0.3rem; }
@@ -436,6 +445,15 @@
       </div>
     </div>
 
+    <!-- Everyday digital habits: the reader's own screen time, a separate total shown in the charts above -->
+    <div class="aipf-below" aria-label="Your digital habits">
+      <h2 class="aipf-h2">Your digital habits <span class="aipf-in-sub">hours per day</span></h2>
+      <p class="aipf-sub">Other screen time, so you can set your AI use against your own habits rather than a generic reference. This is its own total, never added to your AI figures; each habit you enter appears as its own bar in the charts above.</p>
+      <div class="aipf-habits" id="aipf-habits"></div>
+      <p class="aipf-proj-out" id="aipf-habits-out" aria-live="polite"></p>
+      <p class="aipf-fine">Streaming: IEA 2020 (institutional). Video calls: a small preliminary study (9 meetings, one setup). Gaming: Berkeley Lab measurements, confirmed only through secondary summaries (provisional). All are costed on your region's grid. Social media is left out: no source measures it. <a href="#methodology" onclick="document.getElementById('methodology').open=true">More in the methodology</a>.</p>
+    </div>
+
     <!-- Project totals: a coding project's agent sessions, kept out of the daily and yearly figures -->
     <div class="aipf-below" aria-label="Project totals">
       <h2 class="aipf-h2">Project totals: coding-agent sessions</h2>
@@ -516,6 +534,32 @@
           could not verify would overstate how sure we are. No embodied-hardware figure is published for
           either, so their carbon is electricity only, and training is excluded as it is everywhere else
           on this page.
+        </p>
+        <p>
+          <strong>Your digital habits.</strong> Streaming, video calls, and gaming are a separate total,
+          never added to your AI figures; each one you enter gets its own bar in the daily and yearly
+          charts, and your own gaming replaces the generic "hour on a PS5" line. Each source reports
+          grams on one particular grid, so we convert back to electricity using that grid and then cost
+          it on the grid for your region, the same way as the AI rows. <em>Streaming</em> uses
+          <a href="https://www.iea.org/commentaries/the-carbon-footprint-of-streaming-video-fact-checking-the-headlines" target="_blank" rel="noopener">Kamiya / IEA 2020</a>:
+          about 36 g CO<sub>2</sub> an hour on the global-average grid for the average mix of devices
+          (about 0.075 kWh an hour, using this page's 480 g/kWh world average). That analysis also
+          corrected a widely repeated claim of 3.2 kg an hour, which was about 90 times too high. It is
+          from 2020, and bitrates and grids have shifted since. Institutional source, transparent method.
+          <em>Video calls</em> use
+          <a href="https://arxiv.org/abs/2601.06045" target="_blank" rel="noopener">Mortas 2026</a>:
+          10.2–21.6 g CO<sub>2</sub>e an hour with the camera on and 4.8–10.8 g with it off, measured
+          on France's low-carbon grid (79.1 g/kWh), so they come out several times higher on most other
+          grids. The typical value is the middle of each range. The author calls this preliminary: 9
+          meetings on one laptop and one connection, with no screen sharing. <em>Gaming</em> uses
+          <a href="https://link.springer.com/article/10.1007/s40869-019-00084-2" target="_blank" rel="noopener">Mills et al.</a>
+          (Lawrence Berkeley National Laboratory), who found gaming PCs draw about half their rated
+          power while in use; a typical system rated around 600 W therefore draws about 300 W
+          (roughly 150–450 W across systems). Those measurements date from 2015–2019 and we confirmed
+          them only through Berkeley Lab's own summaries, since the paper is paywalled, so treat them as
+          provisional. None of these sources measures water, so habits are carbon only.
+          <strong>Social media</strong> is left out: we found no source that quantifies it, and this
+          page does not guess.
         </p>
         <p>
           <strong>Project totals.</strong> Coding-agent work comes in irregular bursts, so the project
@@ -782,6 +826,24 @@
     ];
 
     const WORLD_GRID = 480; // global-average grid carbon intensity, g CO2e/kWh (Ember)
+
+    // ---- Everyday digital habits: electricity per hour of use, kWh [typical, low, high] ----
+    // Carbon = kWh x the selected region's grid, the same basis as the AI rows. Each source reports grams
+    // on one particular grid, so we back out the energy using that grid. No source measures water.
+    const kwhFromGrams = (grams, grid) => grams / grid;
+    const midRange = (lo, hi) => [(lo + hi) / 2, lo, hi];
+    const HABIT_KWH = {
+      // Kamiya / IEA 2020: ~36 g CO2 per hour on the global-average grid, average device mix. One figure.
+      stream: [kwhFromGrams(36, WORLD_GRID), kwhFromGrams(36, WORLD_GRID), kwhFromGrams(36, WORLD_GRID)],
+      // Mortas 2026 (preliminary: 9 Teams meetings, one laptop, French grid at 79.1 g/kWh). Midpoint = typical.
+      callOn: midRange(kwhFromGrams(10.2, 79.1), kwhFromGrams(21.6, 79.1)),
+      callOff: midRange(kwhFromGrams(4.8, 79.1), kwhFromGrams(10.8, 79.1)),
+      // Mills et al. (LBNL): measured draw ~50% of nameplate; typical gaming PC ~600 W nameplate -> ~300 W
+      // while gaming, range ~150-450 W across systems.
+      game: [0.3, 0.15, 0.45],
+    };
+    const HABIT_LABELS = { stream: 'Streaming video', call: 'Video calls', game: 'Gaming' };
+    const DEFAULT_HABITS = { stream: 0, call: 0, cam: 'on', game: 0 };
     // location = regional baseline for goods, services, shared infrastructure
     // (home energy and driving are separate knobs below, so they are excluded here)
     // w = BLUE water footprint per capita (freshwater from rivers/lakes/aquifers),
@@ -840,6 +902,9 @@
       { url: 'https://arxiv.org/abs/2311.16863', label: 'Luccioni, Jernite & Strubell 2024, "Power Hungry Processing" (FAccT) — energy per generated image.' },
       { url: 'https://arxiv.org/abs/2607.04553', label: 'Jegham, Gamazaychikov & Luccioni 2026, "Lights, Camera, Carbon" — energy per generated video clip.' },
       { url: 'https://arxiv.org/abs/2604.22750', label: 'Bai et al. 2026, "How Do AI Agents Spend Your Money?" (Microsoft Research preprint) — run-to-run spread in coding-agent token use.' },
+      { url: 'https://www.iea.org/commentaries/the-carbon-footprint-of-streaming-video-fact-checking-the-headlines', label: 'Kamiya / IEA 2020, "The carbon footprint of streaming video: fact-checking the headlines" — carbon per hour of streaming.' },
+      { url: 'https://arxiv.org/abs/2601.06045', label: 'Mortas 2026, "Assessing the Carbon Footprint of Virtual Meetings" (preliminary) — carbon per hour of video calls, camera on and off.' },
+      { url: 'https://link.springer.com/article/10.1007/s40869-019-00084-2', label: 'Mills et al. 2019, "Toward Greener Gaming" (LBNL; figures confirmed via Berkeley Lab summaries) — gaming PC power draw.' },
     ];
 
     // Daily reference points (all things that emit, so no add/save direction)
@@ -913,7 +978,7 @@
     const DAYS = 365;
 
     let uidSeq = 1;
-    const state = { rows: [], metric: 'carbon', loc: 'us', home: 'med', drive: 'davg', diet: 'avg', fly: 'some', proj: Object.assign({}, DEFAULT_PROJECT) };
+    const state = { rows: [], metric: 'carbon', loc: 'us', home: 'med', drive: 'davg', diet: 'avg', fly: 'some', proj: Object.assign({}, DEFAULT_PROJECT), habits: Object.assign({}, DEFAULT_HABITS) };
 
     let root = null;
     const getModel = (id) => MODELS.find((m) => m.id === id) || MODELS[0];
@@ -1020,6 +1085,37 @@
     }
     function itemBase(item, metric) { return metric === 'carbon' ? item.c * 1000 : item.w * GAL_TO_L; }
 
+    // Carbon per hour of a habit, grams [typical, low, high]. Video calls depend on the camera setting.
+    function habitPerHour(key) {
+      const k = key === 'call' ? (state.habits.cam === 'off' ? 'callOff' : 'callOn') : key;
+      const grid = getLoc().grid;
+      return HABIT_KWH[k].map((kwh) => kwh * grid);
+    }
+    // Daily carbon of each habit and in total, grams [typical, low, high]. Kept apart from the AI total.
+    function habitsDaily() {
+      const out = { total: [0, 0, 0] };
+      for (const key of ['stream', 'call', 'game']) {
+        const h = state.habits[key] || 0;
+        out[key] = habitPerHour(key).map((g) => g * h);
+        for (let i = 0; i < 3; i++) out.total[i] += out[key][i];
+      }
+      return out;
+    }
+    const hasHabits = () => ['stream', 'call', 'game'].some((k) => (state.habits[k] || 0) > 0);
+    // Bars for the comparison charts: one per habit with hours entered (carbon only; no water figure exists).
+    function habitBars(metric, scale) {
+      if (metric !== 'carbon') return [];
+      const d = habitsDaily(), rows = [];
+      for (const key of ['stream', 'call', 'game']) {
+        const h = state.habits[key] || 0;
+        if (h <= 0) continue;
+        const label = scale === 'annual' ? 'A year of your ' + HABIT_LABELS[key].toLowerCase() + ' (' + fmtHours(h) + '/day)' : 'Your ' + HABIT_LABELS[key].toLowerCase() + ' (' + fmtHours(h) + ')';
+        rows.push({ label: label, v: d[key][0] * (scale === 'annual' ? DAYS : 1), dir: scale === 'annual' ? 'add' : undefined, habit: true });
+      }
+      return rows;
+    }
+    function fmtHours(h) { return (Math.round(h * 100) / 100) + ' h'; }
+
     // Whole-project total for the chosen model and session count: { low, typical, high } in grams or liters.
     function projectRange(metric) {
       const t = perPromptTriple(getModel(state.proj.model), 'agent', metric);
@@ -1092,6 +1188,7 @@
       const p = new URLSearchParams();
       p.set('k', state.metric); p.set('l', state.loc); p.set('h', state.home); p.set('v', state.drive); p.set('d', state.diet); p.set('f', state.fly); p.set('r', r);
       p.set('pm', MODELS.findIndex((m) => m.id === state.proj.model)); p.set('pc', state.proj.count || 0);
+      p.set('hs', state.habits.stream || 0); p.set('hc', state.habits.call || 0); p.set('hk', state.habits.cam); p.set('hg', state.habits.game || 0);
       return location.origin + location.pathname + '#' + p.toString();
     }
     function readURL() {
@@ -1107,6 +1204,10 @@
         const f = p.get('f'); if (f && FLYING.some((x) => x.id === f)) state.fly = f;
         const pm = MODELS[Number(p.get('pm'))]; if (p.get('pm') !== null && pm) state.proj.model = pm.id;
         const pc = Number(p.get('pc')); if (p.get('pc') !== null && pc >= 0) state.proj.count = Math.min(100000, pc);
+        for (const [param, key] of [['hs', 'stream'], ['hc', 'call'], ['hg', 'game']]) {
+          const h = Number(p.get(param)); if (p.get(param) !== null && h >= 0) state.habits[key] = Math.min(24, h);
+        }
+        if (p.get('hk') === 'on' || p.get('hk') === 'off') state.habits.cam = p.get('hk');
         const r = p.get('r');
         if (r) {
           const rows = [];
@@ -1223,6 +1324,66 @@
         wrapEl.textContent = fmtMetric(per) + ' each, ' + fmtMetric(contr) + ' a day, ' + shareStr + '% of your AI ' + metricWord();
       }
     }
+    // Hours-per-day control for a habit: -/+ step half an hour, typing accepts any value from 0 to 24.
+    function hoursStepper(key) {
+      const ctrl = el('div', 'aipf-stepper');
+      const minus = el('button', 'aipf-step', '−'); minus.type = 'button'; minus.setAttribute('aria-label', 'Less time');
+      const input = document.createElement('input');
+      input.type = 'text'; input.inputMode = 'decimal'; input.className = 'aipf-count'; input.value = String(state.habits[key] || 0);
+      input.setAttribute('aria-label', HABIT_LABELS[key] + ', hours per day');
+      const plus = el('button', 'aipf-step', '+'); plus.type = 'button'; plus.setAttribute('aria-label', 'More time');
+      const clamp = (v) => Math.max(0, Math.min(24, v));
+      const step = (dir) => { state.habits[key] = clamp(Math.round(((state.habits[key] || 0) + dir * 0.5) * 2) / 2); input.value = String(state.habits[key]); updateOutputs(); };
+      minus.addEventListener('click', () => step(-1));
+      plus.addEventListener('click', () => step(1));
+      input.addEventListener('input', () => { state.habits[key] = clamp(parseFloat(input.value.replace(/[^0-9.]/g, '')) || 0); updateOutputs(); });
+      input.addEventListener('blur', () => { input.value = String(state.habits[key] || 0); });
+      ctrl.appendChild(minus); ctrl.appendChild(input); ctrl.appendChild(plus);
+      return ctrl;
+    }
+    // Habit inputs are built once; renderHabits() refreshes the per-row notes and the total.
+    function renderHabitInputs() {
+      const box = root.querySelector('#aipf-habits');
+      box.innerHTML = '';
+      for (const key of ['stream', 'call', 'game']) {
+        const wrapEl = el('div', 'aipf-habitwrap');
+        const r = el('div', 'aipf-habit-row');
+        r.appendChild(el('span', 'aipf-habit-name', HABIT_LABELS[key]));
+        if (key === 'call') {
+          const cam = el('select', 'aipf-rsel'); cam.setAttribute('aria-label', 'Camera');
+          cam.appendChild(option('on', 'Camera on', state.habits.cam !== 'off'));
+          cam.appendChild(option('off', 'Camera off', state.habits.cam === 'off'));
+          cam.addEventListener('change', () => { state.habits.cam = cam.value; updateOutputs(); });
+          r.appendChild(cam);
+        } else {
+          r.appendChild(fixedCell(key === 'stream' ? 'Average device mix' : 'Typical gaming PC'));
+        }
+        r.appendChild(hoursStepper(key));
+        wrapEl.appendChild(r);
+        wrapEl.appendChild(el('div', 'aipf-row-meta aipf-habit-meta'));
+        wrapEl.dataset.habit = key;
+        box.appendChild(wrapEl);
+      }
+    }
+    function renderHabits() {
+      const d = habitsDaily();
+      const water = state.metric === 'water';
+      for (const key of ['stream', 'call', 'game']) {
+        const meta = root.querySelector('.aipf-habitwrap[data-habit="' + key + '"] .aipf-habit-meta');
+        const per = habitPerHour(key);
+        const perStr = per[1] === per[2] ? fmtCarbon(per[0]) : fmtCarbon(per[0]) + ' (' + fmtCarbon(per[1]) + ' to ' + fmtCarbon(per[2]) + ')';
+        meta.textContent = water ? 'Water not estimated: no source measures it.' : perStr + ' an hour, ' + fmtCarbon(d[key][0]) + ' a day';
+      }
+      const box = root.querySelector('#aipf-habits-out');
+      if (!hasHabits()) { box.innerHTML = 'Add some hours to compare your AI use with your own screen time.'; return; }
+      if (water) { box.innerHTML = 'Water is not estimated for streaming, video calls, or gaming: none of the sources measures it. Switch to carbon to compare.'; return; }
+      const t = d.total, ai = aiDaily('carbon');
+      const range = t[1] === t[2] ? '' : ' (' + fmtCarbon(t[1]) + ' to ' + fmtCarbon(t[2]) + ')';
+      box.innerHTML =
+        'Your digital habits: <b>' + fmtCarbon(t[0]) + ' a day</b>' + range + ', <b>' + fmtCarbon(t[0] * DAYS) + ' a year</b>. ' +
+        'Your AI use, counted separately: <b>' + fmtCarbon(ai) + ' a day</b>, ' + fmtCarbon(ai * DAYS) + ' a year.';
+    }
+
     // Project inputs are built once; their outputs refresh in renderProject().
     function renderProjectInputs() {
       const box = root.querySelector('#aipf-proj-in');
@@ -1323,8 +1484,9 @@
     }
 
     function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
-    function renderBars(targetId, focalLabel, focalVal, items, unit) {
-      const rows = [{ label: focalLabel, v: focalVal, focal: true }];
+    // extra: ready-made rows ({ label, v, dir }) such as the reader's own digital habits.
+    function renderBars(targetId, focalLabel, focalVal, items, unit, extra) {
+      const rows = [{ label: focalLabel, v: focalVal, focal: true }].concat(extra || []);
       for (const it of items) {
         const v = itemBase(it, state.metric);
         if (v <= 0) continue; // skip items with no impact in this metric (keeps the water view clean)
@@ -1352,8 +1514,10 @@
       const ai = aiDaily(state.metric);
       const unit = chartUnit(state.metric, 'daily');
       root.querySelector('#aipf-daily-sub').innerHTML = 'A day of your AI use (highlighted below) is ' + fmtUnit(ai, unit) + '.';
-      const items = state.metric === 'water' ? DAILY_WATER_ITEMS : DAILY_ITEMS;
-      renderBars('#aipf-daily-bars', 'Your daily AI use', ai, items, unit);
+      let items = state.metric === 'water' ? DAILY_WATER_ITEMS : DAILY_ITEMS;
+      // The reader's own gaming replaces the generic PS5 reference line.
+      if ((state.habits.game || 0) > 0) items = items.filter((it) => it.label !== 'An hour on a PS5');
+      renderBars('#aipf-daily-bars', 'Your daily AI use', ai, items, unit, habitBars(state.metric, 'daily'));
     }
     function renderAnnualSplit() {
       const aiYr = aiDaily(state.metric) * DAYS;
@@ -1366,13 +1530,13 @@
       root.querySelector('#aipf-cut-title').textContent = 'In a year, ways you can cut ' + noun;
       const unit = chartUnit(state.metric, 'annual');
       root.querySelector('#aipf-add-sub').innerHTML = 'Your AI use (highlighted) is ' + fmtUnit(aiYr, unit) + ' a year, next to other things that add to your footprint.';
-      renderBars('#aipf-add-bars', 'A year of your AI use', aiYr, adds, unit);
+      renderBars('#aipf-add-bars', 'A year of your AI use', aiYr, adds, unit, habitBars(state.metric, 'annual'));
       root.querySelector('#aipf-cut-sub').innerHTML = 'Cutting your AI use (highlighted) would save ' + fmtUnit(aiYr, unit) + ' a year, next to the bigger cuts you could make.';
       renderBars('#aipf-cut-bars', 'Cut your AI use', aiYr, cuts, unit);
     }
 
     function updateOutputs() {
-      renderRunning(); updateRowMeta(); renderHeadline(); renderGridNote(); renderWords(); renderDaily(); renderAnnualSplit(); renderProject();
+      renderRunning(); updateRowMeta(); renderHeadline(); renderGridNote(); renderWords(); renderDaily(); renderAnnualSplit(); renderHabits(); renderProject();
     }
     // ---- Cited report ----
     function escXml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -1432,17 +1596,38 @@
       REPORT_REFS.forEach((r, i) => { refsHtml += '<li id="ref' + (i + 1) + '">[' + (i + 1) + '] ' + escXml(r.label) + ' <a href="' + r.url + '">' + escXml(r.url) + '</a></li>'; });
       const fn = (n) => '<sup><a href="#ref' + n + '">[' + n + ']</a></sup>';
       // Section 11, only when a project is entered. It is a one-off total, never added to the figures above.
+      let nextSec = 11; // optional sections below are numbered in order, so there are no gaps
       let projHtml = '';
       const pn = state.proj.count || 0;
       if (pn > 0) {
         const pc = projectRange('carbon'), pw = projectRange('water');
-        projHtml = '<h2>11. A coding project (kept separate)</h2>' +
+        projHtml = '<h2>' + (nextSec++) + '. A coding project (kept separate)</h2>' +
           '<p>' + pn.toLocaleString('en-US') + ' coding-agent session' + (pn === 1 ? '' : 's') + ' with ' + escXml(getModel(state.proj.model).name) +
           ' come to about <strong>' + fmtCarbon(pc.low) + ' to ' + fmtCarbon(pc.high) + '</strong> and <strong>' + fmtWater(pw.low) + ' to ' + fmtWater(pw.high) +
           '</strong> of water (EcoLogits’ typical estimate: ' + fmtCarbon(pc.typical) + ' and ' + fmtWater(pw.typical) + ').' + fn(1) +
           ' This is a total for the whole project, not included in any daily or yearly figure above.</p>' +
           '<p class="muted">One session is EcoLogits’ 100,000-token “assist application development” benchmark' + fn(1) + ', with electricity costed on the average grid for ' + escXml(loc.label) + fn(2) +
           '. The range runs from EcoLogits’ low estimate to twice its high estimate, because the same coding task typically costs about twice as much on one run as another; occasional runs cost far more, and how hard a task looks barely predicts its cost.' + fn(13) + '</p>';
+      }
+      // Digital habits, only when hours are entered. Carbon only, kept separate from the AI figures.
+      let habitsHtml = '';
+      if (hasHabits()) {
+        const hd = habitsDaily();
+        let habitRows = '';
+        for (const key of ['stream', 'call', 'game']) {
+          const h = state.habits[key] || 0;
+          if (h <= 0) continue;
+          const setting = key === 'call' ? (state.habits.cam === 'off' ? 'camera off' : 'camera on') : key === 'stream' ? 'average device mix' : 'typical gaming PC';
+          habitRows += '<tr><td>' + HABIT_LABELS[key] + ' (' + setting + ')</td><td class="n">' + fmtHours(h) + '</td><td class="n">' + fmtCarbon(hd[key][0]) + '</td><td class="n">' + fmtCarbon(hd[key][0] * DAYS) + '</td></tr>';
+        }
+        const t = hd.total;
+        habitsHtml = '<h2>' + (nextSec++) + '. My digital habits (kept separate)</h2>' +
+          '<table><thead><tr><th>Habit</th><th class="n">Per day</th><th class="n">CO₂e/day</th><th class="n">CO₂e/year</th></tr></thead><tbody>' + habitRows + '</tbody></table>' +
+          '<p>Together about <strong>' + fmtCarbon(t[0]) + ' a day</strong>' + (t[1] === t[2] ? '' : ' (range ' + fmtCarbon(t[1]) + ' to ' + fmtCarbon(t[2]) + ')') +
+          ', or <strong>' + fmtCarbon(t[0] * DAYS) + ' a year</strong>, next to my AI use at ' + fmtCarbon(aiDay) + ' a day. This is a separate total, not included in any AI figure above.</p>' +
+          '<p class="muted">Each source’s energy is costed on the average grid for ' + escXml(loc.label) + fn(2) + '. Streaming: IEA, about 36 g CO₂ an hour on the global-average grid' + fn(14) +
+          '. Video calls: a preliminary study of 9 meetings on France’s low-carbon grid' + fn(15) + '. Gaming: Berkeley Lab measurements of gaming PCs, provisional' + fn(16) +
+          '. Water is not estimated for these habits because none of the sources measures it; social media is left out because no source quantifies it.</p>';
       }
       const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
       return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' +
@@ -1478,7 +1663,7 @@
         '<h2>9. In a year, water I add</h2>' + reportBarsSVG(addWaterRows, fmtWater) +
         '<h2>10. In a year, water I could cut</h2>' + reportBarsSVG(cutWaterRows, fmtWater) +
         '<p class="muted">Water comparisons from EcoLogits' + fn(1) + ' and the Water Footprint Network' + fn(10) + '.</p>' +
-        projHtml +
+        projHtml + habitsHtml +
         '<h2>References</h2><ol class="refs">' + refsHtml + '</ol>' +
         // Escaped as "<\/body" so dev servers that inject a reload script before the first
         // closing body tag (e.g. VS Code Live Server) don't insert it inside this string.
@@ -1528,7 +1713,7 @@
       if (!root || root.dataset.ready === '1') return;
       root.dataset.ready = '1';
       setDefaultRows(); readURL();
-      renderRows(); renderLifeSelects(); renderProjectInputs(); renderMetricToggle(); bindEvents(); updateOutputs();
+      renderRows(); renderLifeSelects(); renderHabitInputs(); renderProjectInputs(); renderMetricToggle(); bindEvents(); updateOutputs();
     }
     if (document.readyState !== 'loading') init();
     else document.addEventListener('DOMContentLoaded', init);

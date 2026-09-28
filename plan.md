@@ -66,10 +66,10 @@ Replace or expand the implementation placeholders below with tasks specific to t
 **Feature 3 — Everyday digital habits**
 - [x] Remove the existing unsourced "social media" dropdown (state, UI, URL param) from the combined comparison sentence — done 2026-09-21, ahead of the rest of this feature, at the user's direct request after seeing it in the running page. That edit was lost with the old file, but the 2026-09-27 rebased `index.html` never had this dropdown, so it stays satisfied.
 - [x] Remove the existing "gaming" and "streaming" dropdowns from the combined comparison sentence and their GAMING/STREAMING placeholder data — done 2026-09-21, same as above (superseded by this feature's sourced versions, still to be added). Also absent from the 2026-09-27 base.
-- [ ] Add a "Your digital habits" input section: streaming hours/day, video-call hours/day (camera on/off), gaming hours/day
-- [ ] Compute a separate digital-habits daily/annual total, kept distinct from the AI total
-- [ ] Replace the relevant generic reference lines (e.g., "an hour on a PS5") in the existing comparison charts with the person's entered values where they overlap
-- [ ] Add methodology text and citations (Kamiya/IEA 2020, Mortas 2026, Mills et al.), including confidence-level and social-media-exclusion notes
+- [x] Add a "Your digital habits" input section: streaming hours/day, video-call hours/day (camera on/off), gaming hours/day
+- [x] Compute a separate digital-habits daily/annual total, kept distinct from the AI total — carbon only (no source measures water); each habit's energy is backed out from its source's own grid and costed on the reader's region (user decision 2026-09-27); gaming = measured draw while gaming, ~300 W typical, 150–450 W range (user decision 2026-09-27); video calls use the midpoint of Mortas' range
+- [x] Replace the relevant generic reference lines (e.g., "an hour on a PS5") in the existing comparison charts with the person's entered values where they overlap
+- [x] Add methodology text and citations (Kamiya/IEA 2020, Mortas 2026, Mills et al.), including confidence-level and social-media-exclusion notes
 
 **Feature 4 — Device matters** (after Feature 3)
 - [ ] Add a device dropdown to the streaming row (phone/laptop/TV) using the confirmed ratios (1x/~20x/~100x)
