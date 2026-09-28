@@ -4,7 +4,8 @@
   Converted from Andy Masley's CC0 Astro source:
   https://andymasley.com/visuals/ai-prompt-footprint-source.txt
   Changes from the original: Astro frontmatter and site layout (Base.astro)
-  replaced by this <head>, the site's theme variables, and a small theme script.
+  replaced by this <head>, the site's theme tokens and base styles, its content
+  column wrapper, and a small theme script. Site header, nav and footer omitted.
 -->
 <html lang="en">
 <head>
@@ -27,29 +28,88 @@
   })();
 </script>
 <style>
-  /* Theme tokens copied from andymasley.com's site stylesheet (the ones this page uses). */
+  /* Theme tokens and base styles copied from andymasley.com's site stylesheet
+     (appearances.*.css): only the parts that reach the calculator. The site's
+     header, nav, footer and theme-toggle button are not included. */
   :root {
     --bg: #f4f3ee; --bg-elevated: #f4f3ee; --bg-subtle: #ebeae5;
     --text: #1a1a1a; --text-secondary: #333333; --dim: #666666;
     --accent: #1f5a7a; --accent-hover: #164257; --accent-subtle: rgba(31, 90, 122, .08);
+    --link: #1f5a7a; --selection: #d4e3ea;
     --border: #e5e5e5; --border-strong: #d4d4d4;
     --font-body: Georgia, Cambria, "Times New Roman", Times, serif;
     --font-editorial: Georgia, Cambria, "Times New Roman", Times, serif;
-    --max-width: 640px;
+    --text-base: 1rem; --text-md: 1.0625rem; --text-lg: 1.1875rem; --text-xl: 1.375rem;
+    --text-display: clamp(2.125rem, 1.7rem + 1.7vw, 3.25rem);
+    --leading-ui: 1.65; --leading-prose: 1.7;
+    --space-lg: 1.5rem; --space-xl: 2rem;
+    --underline-offset: 2px; --transition-fast: .15s ease;
+    --measure: 640px; --page-pad: 1.5rem; --max-width: var(--measure);
   }
   [data-theme="dark"] {
     color-scheme: dark;
     --bg: #121212; --bg-elevated: #1c1c1c; --bg-subtle: #191919;
     --text: #e6e6e6; --text-secondary: #c4c4c4; --dim: #9a9a9a;
     --accent: #8fb8d8; --accent-hover: #a9cbe6; --accent-subtle: rgba(143, 184, 216, .14);
+    --link: #8fb8d8; --selection: #22414f;
     --border: #2a2a2a; --border-strong: #3a3a3a;
   }
-  html { font-size: 16px; }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { font-size: 16px; scroll-behavior: smooth; overflow-y: scroll; }
   body {
-    margin: 0; padding: 2rem 0 0;
-    font-family: var(--font-body); line-height: 1.7;
+    margin: 0; padding: 0;
+    font-family: var(--font-body); font-size: var(--text-base); font-weight: 400;
+    line-height: var(--leading-ui);
     color: var(--text); background-color: var(--bg);
+    transition: background .3s, color .3s;
+    font-feature-settings: "kern" 1, "liga" 1;
     overflow-x: hidden; /* .aipf breaks out with 100vw, which includes the scrollbar */
+  }
+  ::selection { background: var(--selection); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-body); margin: 0 0 var(--space-lg) 0; font-weight: 700;
+    text-wrap: balance; letter-spacing: -.01em; color: var(--text);
+  }
+  h1 { font-size: var(--text-display); line-height: 1.15; }
+  h2 { font-size: var(--text-xl); line-height: 1.25; margin-top: 2.5rem; margin-bottom: 1rem; }
+  h3 { font-size: var(--text-lg); line-height: 1.3; margin-top: 2rem; margin-bottom: .75rem; }
+  h4 { font-size: var(--text-md); line-height: 1.4; margin-top: 1.5rem; margin-bottom: .5rem; }
+  p { margin: 0 0 var(--space-xl) 0; text-wrap: pretty; }
+  a {
+    color: var(--link); text-decoration: underline; text-decoration-thickness: 1px;
+    text-underline-offset: var(--underline-offset); text-decoration-color: var(--link);
+    transition: color var(--transition-fast), text-decoration-color var(--transition-fast);
+  }
+  a:hover { color: var(--accent-hover); text-decoration-color: var(--accent-hover); }
+  hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+  details { margin-bottom: 8px; }
+  summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "▸"; font-size: .8em; color: var(--dim); transition: transform .2s; }
+  details[open] > summary::before { transform: rotate(90deg); }
+
+  /* The site's centered content column that the calculator breaks out of. */
+  .main-content {
+    padding: 48px var(--page-pad);
+    max-width: calc(var(--measure) + 2 * var(--page-pad));
+    margin: 0 auto;
+  }
+
+  @media (max-width: 600px) {
+    body { line-height: var(--leading-prose); }
+    h1 { font-size: var(--text-xl); line-height: 1.2; margin-bottom: 1.25rem; }
+    h2 { font-size: var(--text-lg); line-height: 1.25; margin-top: 2.5rem; }
+    h3 { font-size: var(--text-base); margin-top: 2rem; }
+    .main-content { padding: 2.5rem 1.5rem 3rem; }
+    details { margin-bottom: 0; }
+    summary { margin: 0 -1.5rem; padding: .875rem 1.5rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   }
 </style>
 <style>
@@ -276,6 +336,8 @@
 </style>
 </head>
 <body>
+<div class="main-content">
+<main id="main">
   <article class="aipf" id="aipf">
     <header class="aipf-header">
       <h1 class="aipf-title">What your chatbot use actually costs</h1>
@@ -584,6 +646,8 @@
       <span>To the extent possible under law, Andrew Masley has waived all copyright and related or neighboring rights to this work. It is dedicated to the public domain under <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener license">CC0 1.0</a>.</span>
     </p>
   </article>
+</main>
+</div>
 
 <script>
   (function () {
