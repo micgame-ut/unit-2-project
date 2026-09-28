@@ -233,7 +233,12 @@
   .aipf-life select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
   /* Top toolbar: metric toggle on the left, report button on the right */
-  .aipf-toolbar-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem 1rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+  .aipf-toolbar-top { display: flex; align-items: center; justify-content: flex-start; gap: 0.75rem 1.4rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+  .aipf-toolbar-top .aipf-report-btn { margin-left: auto; }
+  /* "What if Claude is dense?" checkbox, beside the view toggle */
+  .aipf-dense { display: inline-flex; align-items: center; gap: 0.4rem; font-family: var(--font-body); font-size: 0.85rem; color: var(--text-secondary); cursor: pointer; }
+  .aipf-dense[hidden] { display: none; }
+  .aipf-dense input { accent-color: var(--accent); width: 1rem; height: 1rem; margin: 0; }
   .aipf-report-btn {
     background: var(--accent); color: var(--bg-elevated); border: none; border-radius: 6px;
     padding: 0.5rem 0.95rem; font-family: var(--font-body); font-size: 0.82rem; cursor: pointer;
@@ -246,10 +251,10 @@
   .aipf-toggle { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0; }
   .aipf-toggle-label { font-family: var(--font-body); font-size: 0.8rem; color: var(--dim); }
   .aipf-showing { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 6px; overflow: hidden; font-family: var(--font-body); }
-  .aipf-metric { background: var(--bg-elevated); border: none; padding: 0.44rem 1.05rem; font: inherit; font-size: 0.9rem; color: var(--dim); cursor: pointer; transition: background-color 0.12s, color 0.12s; }
-  .aipf-metric + .aipf-metric { border-left: 1px solid var(--border-strong); }
-  .aipf-metric.is-active { background: var(--accent); color: var(--bg-elevated); font-weight: 600; }
-  .aipf-metric:hover:not(.is-active) { color: var(--text); background: var(--bg-subtle); }
+  .aipf-metric, .aipf-view { background: var(--bg-elevated); border: none; padding: 0.44rem 1.05rem; font: inherit; font-size: 0.9rem; color: var(--dim); cursor: pointer; transition: background-color 0.12s, color 0.12s; }
+  .aipf-metric + .aipf-metric, .aipf-view + .aipf-view { border-left: 1px solid var(--border-strong); }
+  .aipf-metric.is-active, .aipf-view.is-active { background: var(--accent); color: var(--bg-elevated); font-weight: 600; }
+  .aipf-metric:hover:not(.is-active), .aipf-view:hover:not(.is-active) { color: var(--text); background: var(--bg-subtle); }
 
   .aipf-verdict { margin: 0; }
   .aipf-verdict-fig {
@@ -289,7 +294,11 @@
   .aipf-bar-label { font-family: var(--font-body); font-size: 0.84rem; color: var(--text-secondary); }
   .aipf-bar-row.is-focal .aipf-bar-label { color: var(--text); font-weight: 600; }
   .aipf-bar-row.is-focal { background: var(--accent-subtle); margin: 0.15rem -0.6rem; padding: 0.4rem 0.6rem; border-radius: 4px; }
-  .aipf-bar-track { height: 12px; background: var(--border); }
+  .aipf-bar-track { height: 12px; background: var(--border); position: relative; }
+  /* Range view: the low-high band sits behind the typical bar */
+  .aipf-bar-band { position: absolute; top: 0; bottom: 0; background: var(--dim); opacity: 0.35; }
+  .aipf-bar-row.is-focal .aipf-bar-band { background: var(--accent); }
+  .aipf-bar-fill { position: relative; }
   .aipf-bar-fill { height: 100%; background: var(--dim); }
   .aipf-bar-row.is-focal .aipf-bar-fill { background: var(--accent); min-width: 3px; }
   .aipf-bar-val { font-family: var(--font-body); font-size: 0.8rem; color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -389,6 +398,18 @@
           <button type="button" class="aipf-metric" data-metric="water">💧 Water</button>
         </div>
       </div>
+      <!-- Uncertainty controls: every AI and habit number as one figure or its low-high range, and
+           the "dense Claude" assumption (shown only when Claude Opus or Sonnet is in use). -->
+      <div class="aipf-toggle" role="group" aria-label="Number display">
+        <span class="aipf-toggle-label">Numbers</span>
+        <div class="aipf-showing">
+          <button type="button" class="aipf-view is-active" data-view="typical">Typical</button>
+          <button type="button" class="aipf-view" data-view="range">Range</button>
+        </div>
+      </div>
+      <label class="aipf-dense" id="aipf-dense-wrap" hidden title="EcoLogits assumes Claude Opus and Sonnet use only 10-30% of their parameters on each token. This shows the numbers if they use all of them.">
+        <input type="checkbox" id="aipf-dense"> What if Claude is dense?
+      </label>
       <button type="button" class="aipf-report-btn" id="aipf-report"
         title="Generate a report with citations of exactly how my AI use as entered here contributes to my carbon emissions.">
         Generate a personalized cited report of my AI emissions
@@ -441,7 +462,7 @@
         </div>
         <p class="aipf-fine" id="aipf-grid-note"></p>
         <p class="aipf-fine">Excludes training and retries. Image and video generation count toward carbon only.</p>
-        <p class="aipf-fine">*A note on the Claude models: Anthropic has never said how Claude is built, so EcoLogits has to guess. Its guess is that Claude Opus and Sonnet only use a fraction of their parameters at a time. Some people who follow this closely think Claude actually uses all of them on every token, and if that's right, the Claude numbers here are too low. <a href="#methodology" onclick="document.getElementById('methodology').open=true">More in the methodology below</a>.</p>
+        <p class="aipf-fine">*A note on the Claude models: Anthropic has never said how Claude is built, so EcoLogits has to guess. Its guess is that Claude Opus and Sonnet only use a fraction of their parameters at a time. Some people who follow this closely think Claude actually uses all of them on every token, and if that's right, the Claude numbers here are too low. Tick "What if Claude is dense?" at the top to see how much. <a href="#methodology" onclick="document.getElementById('methodology').open=true">More in the methodology below</a>.</p>
       </div>
     </div>
 
@@ -534,6 +555,29 @@
           could not verify would overstate how sure we are. No embodied-hardware figure is published for
           either, so their carbon is electricity only, and training is excluded as it is everywhere else
           on this page.
+        </p>
+        <p>
+          <strong>Typical or range, and "what if Claude is dense?"</strong> The <em>Numbers</em> switch
+          at the top shows every AI and digital-habit figure, and their bars in the charts, either as
+          one typical value or as its low-to-high range, so you can see how uncertain each one is. For
+          the AI rows the range is EcoLogits' own 95% interval; for images and streaming no range is
+          published, so those stay a single figure; the other habits and video models use their
+          sources' ranges. Project totals are always a range. The reference items in the charts (a
+          burger, a flight) are single published figures. The <em>dense</em> checkbox appears when
+          Claude Opus 4.8 or Sonnet 4.6 is in use. In
+          <a href="https://github.com/genai-impact/ecologits/blob/main/ecologits/data/models.json" target="_blank" rel="noopener">EcoLogits' model data</a>,
+          both are mixture-of-experts models: Opus 670 billion parameters with 67–200 billion active on
+          each token, Sonnet 440 billion with 44–132 billion active (10–30%), and its low and high
+          estimates use the fewest and the most active. EcoLogits' energy and water rise in a straight
+          line with active parameters (its typical value sits exactly halfway between its low and high),
+          so the dense estimate extends that same line to every parameter active. That comes to about 3
+          times the typical energy for Sonnet and 3.5 times for Opus, and about 4 times the water; the
+          hardware-manufacturing (embodied) share does not change. It is well short of 3.3–10 times,
+          because part of each reply's energy does not grow with model size. Claude Haiku 4.5 is left
+          alone, because EcoLogits already treats it as dense (10–35 billion parameters). With both
+          switches on, the range runs from EcoLogits' low estimate to the dense estimate, covering both
+          views of how Claude is built. The parameter counts are EcoLogits' estimates, not figures from
+          Anthropic.
         </p>
         <p>
           <strong>Your digital habits.</strong> Streaming, video calls, and gaming are a separate total,
@@ -1020,7 +1064,7 @@
     const DAYS = 365;
 
     let uidSeq = 1;
-    const state = { rows: [], metric: 'carbon', loc: 'us', home: 'med', drive: 'davg', diet: 'avg', fly: 'some', proj: Object.assign({}, DEFAULT_PROJECT), habits: Object.assign({}, DEFAULT_HABITS) };
+    const state = { rows: [], metric: 'carbon', loc: 'us', home: 'med', drive: 'davg', diet: 'avg', fly: 'some', proj: Object.assign({}, DEFAULT_PROJECT), habits: Object.assign({}, DEFAULT_HABITS), view: 'typical', dense: false };
 
     let root = null;
     const getModel = (id) => MODELS.find((m) => m.id === id) || MODELS[0];
@@ -1072,19 +1116,51 @@
     function fmtEnergy(wh) { return wh >= 1000 ? fmtNum(wh / 1000) + ' kWh' : fmtNum(wh) + ' Wh'; }
 
     // ---- Math (base units: carbon grams, water liters) ----
-    function perPromptTriple(model, size, metric) {
+    // ---- "What if Claude is dense?" ----
+    // EcoLogits models Opus 4.8 and Sonnet 4.6 as mixture-of-experts: of 670B / 440B parameters, 10-30% are
+    // active on each token, and its low / high estimates use the fewest / most active. Its energy and water
+    // fall on a straight line in active parameters (the typical value sits exactly midway), so "dense" extends
+    // that line to every parameter active. Hardware (embodied) emissions don't change along it. Haiku 4.5 is
+    // already modeled as dense, so it is left alone.
+    const MOE_CLAUDE = {
+      'claude-opus-4-8':   { activeLow: 67, activeHigh: 200, total: 670 },
+      'claude-sonnet-4-6': { activeLow: 44, activeHigh: 132, total: 440 },
+    };
+    const denseValue = (low, high, p) => low + (high - low) * (p.total - p.activeLow) / (p.activeHigh - p.activeLow);
+    const isDenseModel = (id) => state.dense && !!MOE_CLAUDE[id];
+    // Per-prompt figures for a text row, [typical, low, high] each. With the dense toggle on, the typical value
+    // becomes the dense estimate and the range runs from EcoLogits' own low (fewest active) up to it.
+    function textFigures(model, size) {
       const s = model.sizes[size];
+      const f = { wh: [s.wh, s.whmin, s.whmax], ml: [s.ml, s.mlmin, s.mlmax], emb: [s.emb, s.embmin, s.embmax] };
+      if (isDenseModel(model.id)) {
+        const p = MOE_CLAUDE[model.id];
+        const wh = denseValue(s.whmin, s.whmax, p), ml = denseValue(s.mlmin, s.mlmax, p);
+        f.wh = [wh, s.whmin, wh];
+        f.ml = [ml, s.mlmin, ml];
+      }
+      return f;
+    }
+    function perPromptTriple(model, size, metric) {
+      const f = textFigures(model, size);
       // Carbon = electricity on the selected region's grid + EcoLogits' (grid-independent) embodied hardware carbon.
       if (metric === 'carbon') {
         const grid = getLoc().grid; // g CO2e per kWh
-        return [
-          (s.wh / 1000) * grid + s.emb,
-          (s.whmin / 1000) * grid + s.embmin,
-          (s.whmax / 1000) * grid + s.embmax,
-        ];
+        return [0, 1, 2].map((i) => (f.wh[i] / 1000) * grid + f.emb[i]);
       }
-      return [s.ml / 1000, s.mlmin / 1000, s.mlmax / 1000];
+      return f.ml.map((ml) => ml / 1000);
     }
+
+    // ---- Typical vs range view ----
+    const isRange = () => state.view === 'range';
+    // A [typical, low, high] triple as text: the typical figure, or "low to high" in range view
+    // (still one figure when both ends round to the same text).
+    function fmtTriple(t, fmt) {
+      if (!isRange()) return fmt(t[0]);
+      const lo = fmt(t[1]), hi = fmt(t[2]);
+      return lo === hi ? lo : lo + ' to ' + hi;
+    }
+    const scaleTriple = (t, k) => t.map((v) => v * k);
     // Each usage row is a text prompt (model x output length), an image, or a video clip.
     // Rows saved before image/video existed have no kind, so they count as text.
     const rowKind = (r) => r.kind || 'text';
@@ -1093,8 +1169,7 @@
       const k = rowKind(r);
       if (k === 'image') return [IMAGE_GEN.wh, IMAGE_GEN.whmin, IMAGE_GEN.whmax];
       if (k === 'video') { const v = getVideoModel(r.model); return [v.wh, v.whmin, v.whmax]; }
-      const s = getModel(r.model).sizes[r.size];
-      return [s.wh, s.whmin, s.whmax];
+      return textFigures(getModel(r.model), r.size).wh;
     }
     // Per-unit impact of a row: [typical, low, high] in grams CO2e or liters.
     function rowTriple(r, metric) {
@@ -1115,7 +1190,12 @@
       return [a, b, c];
     }
     const aiDaily = (metric) => aiDailyTriple(metric)[0];
-    function aiDailyEnergy() { let t = 0; for (const r of state.rows) if (r.count) t += r.count * rowUnitEnergy(r)[0]; return t; }
+    function aiDailyEnergyTriple() {
+      const t = [0, 0, 0];
+      for (const r of state.rows) if (r.count) rowUnitEnergy(r).forEach((wh, i) => { t[i] += r.count * wh; });
+      return t;
+    }
+    const aiDailyEnergy = () => aiDailyEnergyTriple()[0];
     function dailyFootprint(metric) {
       const loc = getLoc();
       const home = HOMES.find((x) => x.id === state.home) || HOMES[1];
@@ -1154,7 +1234,8 @@
         const h = state.habits[key] || 0;
         if (h <= 0) continue;
         const label = scale === 'annual' ? 'A year of your ' + HABIT_LABELS[key].toLowerCase() + ' (' + fmtHours(h) + '/day)' : 'Your ' + HABIT_LABELS[key].toLowerCase() + ' (' + fmtHours(h) + ')';
-        rows.push({ label: label, v: d[key][0] * (scale === 'annual' ? DAYS : 1), dir: scale === 'annual' ? 'add' : undefined, habit: true });
+        const k = scale === 'annual' ? DAYS : 1;
+        rows.push({ label: label, v: d[key][0] * k, lo: d[key][1] * k, hi: d[key][2] * k, dir: scale === 'annual' ? 'add' : undefined, habit: true });
       }
       return rows;
     }
@@ -1232,7 +1313,7 @@
       const p = new URLSearchParams();
       p.set('k', state.metric); p.set('l', state.loc); p.set('h', state.home); p.set('v', state.drive); p.set('d', state.diet); p.set('f', state.fly); p.set('r', r);
       p.set('pm', MODELS.findIndex((m) => m.id === state.proj.model)); p.set('pc', state.proj.count || 0);
-      p.set('hs', state.habits.stream || 0); p.set('hc', state.habits.call || 0); p.set('hk', state.habits.cam); p.set('hd', state.habits.sdev); p.set('hg', state.habits.game || 0); p.set('hgd', state.habits.gdev);
+      p.set('hs', state.habits.stream || 0); p.set('hc', state.habits.call || 0); p.set('hk', state.habits.cam); p.set('hd', state.habits.sdev); p.set('hg', state.habits.game || 0); p.set('hgd', state.habits.gdev); p.set('sv', state.view); p.set('dn', state.dense ? 1 : 0);
       return location.origin + location.pathname + '#' + p.toString();
     }
     function readURL() {
@@ -1254,6 +1335,8 @@
         if (p.get('hk') === 'on' || p.get('hk') === 'off') state.habits.cam = p.get('hk');
         if (STREAM_DEVICES.some((d) => d.id === p.get('hd'))) state.habits.sdev = p.get('hd');
         if (GAME_DEVICES.some((d) => d.id === p.get('hgd'))) state.habits.gdev = p.get('hgd');
+        if (p.get('sv') === 'typical' || p.get('sv') === 'range') state.view = p.get('sv');
+        if (p.get('dn') === '1') state.dense = true;
         const r = p.get('r');
         if (r) {
           const rows = [];
@@ -1363,11 +1446,12 @@
           wrapEl.textContent = 'Water not estimated for ' + kind + ' generation: no verified figure exists (see the methodology).';
           continue;
         }
-        const per = rowTriple(row, state.metric)[0];
-        const contr = (row.count || 0) * per;
-        const share = total > 0 ? (contr / total) * 100 : 0;
+        const per = rowTriple(row, state.metric);
+        const contr = scaleTriple(per, row.count || 0);
+        const share = total > 0 ? (contr[0] / total) * 100 : 0;
         const shareStr = share >= 10 ? Math.round(share) : share.toFixed(1);
-        wrapEl.textContent = fmtMetric(per) + ' each, ' + fmtMetric(contr) + ' a day, ' + shareStr + '% of your AI ' + metricWord();
+        wrapEl.textContent = fmtTriple(per, fmtMetric) + ' each, ' + fmtTriple(contr, fmtMetric) + ' a day, ' + shareStr + '% of your AI ' + metricWord() +
+          (kind === 'text' && isDenseModel(row.model) ? ' (dense estimate)' : '');
       }
     }
     // Hours-per-day control for a habit: -/+ step half an hour, typing accepts any value from 0 to 24.
@@ -1425,17 +1509,16 @@
       for (const key of ['stream', 'call', 'game']) {
         const meta = root.querySelector('.aipf-habitwrap[data-habit="' + key + '"] .aipf-habit-meta');
         const per = habitPerHour(key);
-        const perStr = per[1] === per[2] ? fmtCarbon(per[0]) : fmtCarbon(per[0]) + ' (' + fmtCarbon(per[1]) + ' to ' + fmtCarbon(per[2]) + ')';
-        meta.textContent = water ? 'Water not estimated: no source measures it.' : perStr + ' an hour, ' + fmtCarbon(d[key][0]) + ' a day';
+        const perStr = fmtTriple(per, fmtCarbon);
+        meta.textContent = water ? 'Water not estimated: no source measures it.' : perStr + ' an hour, ' + fmtTriple(d[key], fmtCarbon) + ' a day';
       }
       const box = root.querySelector('#aipf-habits-out');
       if (!hasHabits()) { box.innerHTML = 'Add some hours to compare your AI use with your own screen time.'; return; }
       if (water) { box.innerHTML = 'Water is not estimated for streaming, video calls, or gaming: none of the sources measures it. Switch to carbon to compare.'; return; }
-      const t = d.total, ai = aiDaily('carbon');
-      const range = t[1] === t[2] ? '' : ' (' + fmtCarbon(t[1]) + ' to ' + fmtCarbon(t[2]) + ')';
+      const t = d.total, ai = aiDailyTriple('carbon');
       box.innerHTML =
-        'Your digital habits: <b>' + fmtCarbon(t[0]) + ' a day</b>' + range + ', <b>' + fmtCarbon(t[0] * DAYS) + ' a year</b>. ' +
-        'Your AI use, counted separately: <b>' + fmtCarbon(ai) + ' a day</b>, ' + fmtCarbon(ai * DAYS) + ' a year.';
+        'Your digital habits: <b>' + fmtTriple(t, fmtCarbon) + ' a day</b>, <b>' + fmtTriple(scaleTriple(t, DAYS), fmtCarbon) + ' a year</b>. ' +
+        'Your AI use, counted separately: <b>' + fmtTriple(ai, fmtCarbon) + ' a day</b>, ' + fmtTriple(scaleTriple(ai, DAYS), fmtCarbon) + ' a year.';
     }
 
     // Project inputs are built once; their outputs refresh in renderProject().
@@ -1455,9 +1538,11 @@
       const r = projectRange(state.metric);
       box.innerHTML =
         '<span class="aipf-proj-fig"><span class="aipf-nw">' + fmtMetric(r.low) + '</span> to <span class="aipf-nw">' + fmtMetric(r.high) + '</span></span>' +
-        'for ' + n.toLocaleString('en-US') + ' session' + (n === 1 ? '' : 's') + ' with ' + esc(getModel(state.proj.model).name) +
+        'for ' + n.toLocaleString('en-US') + ' session' + (n === 1 ? '' : 's') + ' with ' + esc(getModel(state.proj.model).name) + (isDenseModel(state.proj.model) ? ' (dense estimate)' : '') +
         ', ' + projectComparison(r.low, r.high, state.metric) + '. ' +
-        'EcoLogits’ typical estimate alone would be ' + fmtMetric(r.typical) + '; the range runs from its low estimate to twice its high estimate, because the same task can cost about twice as much on one run as another.';
+        (isDenseModel(state.proj.model)
+          ? 'The dense estimate alone would be ' + fmtMetric(r.typical) + '; the range runs from EcoLogits’ low estimate to twice the dense estimate, because the same task can cost about twice as much on one run as another.'
+          : 'EcoLogits’ typical estimate alone would be ' + fmtMetric(r.typical) + '; the range runs from its low estimate to twice its high estimate, because the same task can cost about twice as much on one run as another.');
     }
 
     function renderLifeSelects() {
@@ -1472,7 +1557,7 @@
     // ---- Outputs ----
     function renderRunning() {
       const box = root.querySelector('#aipf-running');
-      const cD = aiDaily('carbon'), wD = aiDaily('water'), eD = aiDailyEnergy();
+      const cD = aiDailyTriple('carbon'), wD = aiDailyTriple('water'), eD = aiDailyEnergyTriple();
       // "27 prompts, 4 images and 1 video clip"
       const parts = [];
       for (const [kind, noun] of [['text', 'prompt'], ['image', 'image'], ['video', 'video clip']]) {
@@ -1482,9 +1567,9 @@
       if (!parts.length) { box.innerHTML = 'Nothing entered yet.'; return; }
       const list = parts.length > 1 ? parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1] : parts[0];
       box.innerHTML =
-        'That is ' + list + ' a day, costing about <b>' + fmtCarbon(cD) +
-        '</b> and <b>' + fmtWater(wD) + '</b> (' + fmtEnergy(eD) + '). Over a year, <b>' + fmtCarbon(cD * DAYS) +
-        '</b> and <b>' + fmtWater(wD * DAYS) + '</b>.' +
+        'That is ' + list + ' a day, costing about <b>' + fmtTriple(cD, fmtCarbon) +
+        '</b> and <b>' + fmtTriple(wD, fmtWater) + '</b> (' + fmtTriple(eD, fmtEnergy) + '). Over a year, <b>' + fmtTriple(scaleTriple(cD, DAYS), fmtCarbon) +
+        '</b> and <b>' + fmtTriple(scaleTriple(wD, DAYS), fmtWater) + '</b>.' +
         (hasMediaRows() ? ' Water counts text prompts only: no verified figure exists for image or video generation.' : '');
     }
 
@@ -1493,16 +1578,20 @@
       const t = aiDailyTriple(state.metric);
       const ai = t[0], day = dailyFootprint(state.metric);
       const pct = day > 0 ? (ai / day) * 100 : 0;
-      let pctStr;
-      if (pct >= 1) pctStr = pct.toFixed(pct >= 10 ? 0 : 1) + '%';
-      else if (pct >= 0.01) pctStr = pct.toFixed(2) + '%';
-      else if (pct > 0) pctStr = 'under 0.01%';
-      else pctStr = '0%';
+      const fmtPct = (p) => {
+        if (p >= 1) return p.toFixed(p >= 10 ? 0 : 1) + '%';
+        if (p >= 0.01) return p.toFixed(2) + '%';
+        return p > 0 ? 'under 0.01%' : '0%';
+      };
+      // Range view shows the share as "low–high%" (one figure when both ends round the same).
+      const pcts = t.map((v) => (day > 0 ? (v / day) * 100 : 0));
+      let pctStr = fmtPct(pct);
+      if (isRange() && fmtPct(pcts[1]) !== fmtPct(pcts[2])) pctStr = fmtPct(pcts[1]).replace('%', '') + '–' + fmtPct(pcts[2]);
       box.innerHTML =
-        '<div class="aipf-verdict-fig">' + pctStr + '</div>' +
+        '<div class="aipf-verdict-fig' + (isRange() ? ' is-range' : '') + '">' + pctStr + '</div>' +
         '<p class="aipf-verdict-say">of your daily ' + metricWord() + ' footprint.</p>' +
-        '<p class="aipf-verdict-detail">A day of your AI use is ' + fmtMetric(ai) + ' (' + fmtMetric(t[1]) + ' to ' + fmtMetric(t[2]) +
-          '). A day of your life is ' + fmtMetric(day) + '.</p>' +
+        '<p class="aipf-verdict-detail">A day of your AI use is ' + fmtTriple(t, fmtMetric) + (isRange() ? ' (typical ' + fmtMetric(ai) + ')' : '') +
+          '. A day of your life is ' + fmtMetric(day) + '.</p>' +
         '<div class="aipf-prop"><div class="aipf-prop-fill" style="width:' + Math.max(0.5, Math.min(100, pct)).toFixed(2) + '%"></div></div>' +
         '<div class="aipf-prop-cap"><span class="accent">your AI use</span><span>a full day</span></div>';
     }
@@ -1532,22 +1621,27 @@
         const cy = cd * DAYS;
         html += '<span class="aipf-words-code">It also writes about <b>' + fmtWords(cd) + ' lines of code a day</b>, roughly <b>' + fmtWords(cy) + '</b> a year.</span>';
       }
-      const miles = Math.round(aiDaily('carbon') * DAYS / 400); // EPA ~400 g CO2 per vehicle-mile
-      html += '<span class="aipf-words-miles">If you use chatbots this much every day, your annual use emits as much as driving the average gas car <b>' + miles.toLocaleString('en-US') + '</b> mile' + (miles === 1 ? '' : 's') + ' once.</span>';
+      const miles = scaleTriple(aiDailyTriple('carbon'), DAYS / 400).map(Math.round); // EPA ~400 g CO2 per vehicle-mile
+      const milesStr = fmtTriple(miles, (m) => m.toLocaleString('en-US'));
+      html += '<span class="aipf-words-miles">If you use chatbots this much every day, your annual use emits as much as driving the average gas car <b>' + milesStr + '</b> mile' + (milesStr === '1' ? '' : 's') + ' once.</span>';
       box.innerHTML = html;
     }
 
     function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
     // extra: ready-made rows ({ label, v, dir }) such as the reader's own digital habits.
+    // focalVal is a number or a [typical, low, high] triple; extra rows may carry lo / hi too.
+    // In range view those rows get a lighter band from lo to hi behind the typical bar.
     function renderBars(targetId, focalLabel, focalVal, items, unit, extra) {
-      const rows = [{ label: focalLabel, v: focalVal, focal: true }].concat(extra || []);
+      const f = Array.isArray(focalVal) ? focalVal : [focalVal, focalVal, focalVal];
+      const rows = [{ label: focalLabel, v: f[0], lo: f[1], hi: f[2], focal: true }].concat(extra || []);
       for (const it of items) {
         const v = itemBase(it, state.metric);
         if (v <= 0) continue; // skip items with no impact in this metric (keeps the water view clean)
         rows.push({ label: it.label, v: v, dir: it.dir });
       }
       rows.sort((a, b) => b.v - a.v);
-      const max = Math.max.apply(null, rows.map((r) => r.v).concat([1e-9]));
+      const hasBand = (r) => isRange() && r.lo != null && r.hi != null && r.lo !== r.hi;
+      const max = Math.max.apply(null, rows.map((r) => (hasBand(r) ? Math.max(r.v, r.hi) : r.v)).concat([1e-9]));
       const box = root.querySelector(targetId);
       box.innerHTML = '';
       for (const r of rows) {
@@ -1558,23 +1652,33 @@
         row.appendChild(el('div', 'aipf-bar-label', labelHtml));
         const track = el('div', 'aipf-bar-track');
         const fill = el('div', 'aipf-bar-fill'); fill.style.width = Math.max(0.4, (r.v / max) * 100).toFixed(2) + '%';
+        let val = fmtUnit(r.v, unit);
+        if (hasBand(r)) {
+          const band = el('div', 'aipf-bar-band');
+          band.style.left = ((r.lo / max) * 100).toFixed(2) + '%';
+          band.style.width = Math.max(0.4, ((r.hi - r.lo) / max) * 100).toFixed(2) + '%';
+          track.appendChild(band);
+          // "15–27 g CO₂e": the unit only once, after the high end.
+          const lo = fmtUnit(r.lo, unit), hi = fmtUnit(r.hi, unit);
+          val = lo === hi ? hi : lo.split(' ')[0] + '–' + hi;
+        }
         track.appendChild(fill);
         row.appendChild(track);
-        row.appendChild(el('div', 'aipf-bar-val', fmtUnit(r.v, unit)));
+        row.appendChild(el('div', 'aipf-bar-val', val));
         box.appendChild(row);
       }
     }
     function renderDaily() {
-      const ai = aiDaily(state.metric);
+      const ai = aiDailyTriple(state.metric);
       const unit = chartUnit(state.metric, 'daily');
-      root.querySelector('#aipf-daily-sub').innerHTML = 'A day of your AI use (highlighted below) is ' + fmtUnit(ai, unit) + '.';
+      root.querySelector('#aipf-daily-sub').innerHTML = 'A day of your AI use (highlighted below) is ' + fmtTriple(ai, (v) => fmtUnit(v, unit)) + '.';
       let items = state.metric === 'water' ? DAILY_WATER_ITEMS : DAILY_ITEMS;
       // The reader's own gaming replaces the generic PS5 reference line.
       if ((state.habits.game || 0) > 0) items = items.filter((it) => it.label !== 'An hour on a PS5');
       renderBars('#aipf-daily-bars', 'Your daily AI use', ai, items, unit, habitBars(state.metric, 'daily'));
     }
     function renderAnnualSplit() {
-      const aiYr = aiDaily(state.metric) * DAYS;
+      const aiYr = scaleTriple(aiDailyTriple(state.metric), DAYS);
       const strip = (it) => ({ label: it.label, c: it.c, w: it.w });
       const src = state.metric === 'water' ? ANNUAL_WATER_ITEMS : ANNUAL_ITEMS;
       const adds = src.filter((it) => it.dir === 'add').map(strip);
@@ -1583,14 +1687,14 @@
       root.querySelector('#aipf-add-title').textContent = 'In a year, ways you add ' + noun;
       root.querySelector('#aipf-cut-title').textContent = 'In a year, ways you can cut ' + noun;
       const unit = chartUnit(state.metric, 'annual');
-      root.querySelector('#aipf-add-sub').innerHTML = 'Your AI use (highlighted) is ' + fmtUnit(aiYr, unit) + ' a year, next to other things that add to your footprint.';
+      root.querySelector('#aipf-add-sub').innerHTML = 'Your AI use (highlighted) is ' + fmtTriple(aiYr, (v) => fmtUnit(v, unit)) + ' a year, next to other things that add to your footprint.';
       renderBars('#aipf-add-bars', 'A year of your AI use', aiYr, adds, unit, habitBars(state.metric, 'annual'));
-      root.querySelector('#aipf-cut-sub').innerHTML = 'Cutting your AI use (highlighted) would save ' + fmtUnit(aiYr, unit) + ' a year, next to the bigger cuts you could make.';
+      root.querySelector('#aipf-cut-sub').innerHTML = 'Cutting your AI use (highlighted) would save ' + fmtTriple(aiYr, (v) => fmtUnit(v, unit)) + ' a year, next to the bigger cuts you could make.';
       renderBars('#aipf-cut-bars', 'Cut your AI use', aiYr, cuts, unit);
     }
 
     function updateOutputs() {
-      renderRunning(); updateRowMeta(); renderHeadline(); renderGridNote(); renderWords(); renderDaily(); renderAnnualSplit(); renderHabits(); renderProject();
+      renderRunning(); updateRowMeta(); renderHeadline(); renderGridNote(); renderWords(); renderDaily(); renderAnnualSplit(); renderHabits(); renderProject(); renderUncertaintyControls();
     }
     // ---- Cited report ----
     function escXml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -1702,7 +1806,7 @@
         '<p class="muted">Per-prompt figures come from the EcoLogits model' + fn(1) + '; the electricity is costed on the average grid for ' + escXml(loc.label) + fn(2) + ', and EcoLogits’ embodied hardware emissions are kept.' +
           (hasMediaRows() ? ' Image generation uses Luccioni et al.’s measured energy per image' + fn(11) + ' and video generation Jegham et al.’s per-clip energy' + fn(12) + ' (the midpoint of the published range for proprietary models); both are electricity only, and water is not estimated for them because no verified figure exists.' : '') + '</p>' +
         '<h2>2. My AI carbon</h2>' +
-        '<p>Across these prompts, my AI use comes to about <strong>' + fmtCarbon(aiDay) + ' per day</strong> (range ' + fmtCarbon(aiMin) + ' to ' + fmtCarbon(aiMax) + '), or <strong>' + fmtCarbon(aiYr) + ' per year</strong>, drawing about ' + fmtEnergy(eD) + ' of electricity a day.' + fn(1) + fn(2) + ' The range is EcoLogits’ 95% interval, mostly uncertainty in the parameter counts of closed models.' + fn(1) + '</p>' +
+        '<p>Across these prompts, my AI use comes to about <strong>' + fmtCarbon(aiDay) + ' per day</strong> (range ' + fmtCarbon(aiMin) + ' to ' + fmtCarbon(aiMax) + '), or <strong>' + fmtCarbon(aiYr) + ' per year</strong>, drawing about ' + fmtEnergy(eD) + ' of electricity a day.' + fn(1) + fn(2) + ' The range is EcoLogits’ 95% interval, mostly uncertainty in the parameter counts of closed models.' + fn(1) + (state.dense && state.rows.some((r) => r.count && rowKind(r) === 'text' && MOE_CLAUDE[r.model]) ? ' Claude Opus and Sonnet are counted under the “dense” assumption: EcoLogits’ own estimate extended to every parameter active (about 3–3.5 times the energy), with the range running from EcoLogits’ low estimate to that dense figure.' + fn(1) : '') + '</p>' +
         '<h2>3. How that compares with the rest of my life</h2>' +
         '<p><span class="big">' + pctStr + '</span><br>of an average day of my own carbon footprint (' + fmtCarbon(day) + ' / day), built from:</p>' +
         '<table><tbody>' + fpHtml + '</tbody></table>' +
@@ -1731,6 +1835,14 @@
       } catch (e) { /* ignore */ }
     }
 
+    // Typical / Range buttons, and the dense checkbox, which only appears while Claude Opus or Sonnet is in use
+    // (in a usage row or the project). Hidden, it keeps its setting but changes nothing.
+    function renderUncertaintyControls() {
+      root.querySelectorAll('.aipf-view').forEach((b) => { const on = b.dataset.view === state.view; b.classList.toggle('is-active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+      const moeInUse = state.rows.some((r) => rowKind(r) === 'text' && MOE_CLAUDE[r.model]) || ((state.proj.count || 0) > 0 && !!MOE_CLAUDE[state.proj.model]);
+      root.querySelector('#aipf-dense-wrap').hidden = !moeInUse;
+      root.querySelector('#aipf-dense').checked = state.dense;
+    }
     function renderMetricToggle() {
       root.querySelectorAll('.aipf-metric').forEach((b) => { const on = b.dataset.metric === state.metric; b.classList.toggle('is-active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
     }
@@ -1762,6 +1874,8 @@
       root.querySelector('#aipf-diet').addEventListener('change', (e) => { state.diet = e.target.value; updateOutputs(); });
       root.querySelector('#aipf-fly').addEventListener('change', (e) => { state.fly = e.target.value; updateOutputs(); });
       root.querySelectorAll('.aipf-metric').forEach((b) => { b.addEventListener('click', () => { state.metric = b.dataset.metric; renderMetricToggle(); updateOutputs(); }); });
+      root.querySelectorAll('.aipf-view').forEach((b) => { b.addEventListener('click', () => { state.view = b.dataset.view; updateOutputs(); }); });
+      root.querySelector('#aipf-dense').addEventListener('change', (e) => { state.dense = e.target.checked; updateOutputs(); });
     }
     function init() {
       root = document.getElementById('aipf');

@@ -78,10 +78,10 @@ Replace or expand the implementation placeholders below with tasks specific to t
 - [x] Add methodology text for both ratios, including the gaming figure's secondary-source and dated-hardware caveats
 
 **Feature 5 — Uncertainty control** (after Features 1-4)
-- [ ] Add the range toggle; audit every place a carbon/water number is rendered (daily bars, annual bars, mini chart, headline verdict, project totals, digital-habits totals) and swap each to use `whmin`/`whmax` when toggled on
-- [ ] Add the "what if Claude is dense" toggle, active only when a Claude model is in use; apply the ~3.3x-10x multiplier to Claude-attributable figures only
-- [ ] Confirm both toggles can be combined (dense + range) and that non-Claude figures are unaffected by the dense toggle
-- [ ] Add methodology text explaining both toggles' basis and caveats in plain language
+- [x] Add the range toggle; audit every place a carbon/water number is rendered (daily bars, annual bars, mini chart, headline verdict, project totals, digital-habits totals) and swap each to use `whmin`/`whmax` when toggled on — done: running summary, row notes, headline, words/miles, all three charts (band behind AI and habit bars), habits; project totals stay a range per Feature 2
+- [x] Add the "what if Claude is dense" toggle, active only when Claude Opus or Sonnet is in use — revised: extends EcoLogits' own linear low-to-high line to all parameters active (~3–3.5x energy), Haiku excluded as already dense; see spec Revisions 2026-09-27
+- [x] Confirm both toggles can be combined (dense + range) and that non-Claude figures are unaffected by the dense toggle
+- [x] Add methodology text explaining both toggles' basis and caveats in plain language
 
 ### Verification
 
@@ -101,6 +101,8 @@ Replace or expand the implementation placeholders below with tasks specific to t
 **2026-09-27 — Calculator rebased on Andy Masley's current source.** The Project 1 `index.html` (with the uncommitted 2026-09-21 dropdown removals) and `footprint-calculator.astro` were deleted from the working tree. `calculator/index.html` is now a standalone HTML conversion of the current CC0 source (andymasley.com/visuals/ai-prompt-footprint-source.txt), with the site's spacing/text styles and a fix so it runs under VS Code Live Server; the original is kept unchanged as `calculator/ai-prompt-footprint-source.astro`. Checked the new base against this plan: it has no social/gaming/streaming dropdowns (so Feature 3's two removal tasks remain satisfied without redoing them), and still has everything later features rely on — per-model `whmin`/`whmax` ranges, the "coding / agent session" size, the "An hour on a PS5" reference line, and the Claude disclaimer. Route change only; the specification is unchanged.
 
 **2026-09-27 — Feature 4 figures changed (spec revised).** Streaming device ratios now scale only the device's 72% share of energy, and gaming uses measured power during play for four devices (older and current consoles split) instead of yearly kWh ratios, after new research recorded in research.md. Details and reasons are in spec.md Revisions (2026-09-27). This also replaces Feature 3's derived 300 W gaming-PC figure with ~234 W measured and its streaming energy with the quoted 0.077 kWh/hour.
+
+**2026-09-27 — Feature 5 dense-Claude method changed (spec revised).** EcoLogits' data turned out to include current Claude entries (Haiku already dense), so the dense estimate extends EcoLogits' own line to all parameters active for Opus and Sonnet instead of a flat 3.3–10x. See spec.md Revisions and the research.md correction.
 
 ## Commands
 
