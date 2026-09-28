@@ -1236,7 +1236,9 @@
         '<h2>10. In a year, water I could cut</h2>' + reportBarsSVG(cutWaterRows, fmtWater) +
         '<p class="muted">Water comparisons from EcoLogits' + fn(1) + ' and the Water Footprint Network' + fn(10) + '.</p>' +
         '<h2>References</h2><ol class="refs">' + refsHtml + '</ol>' +
-        '</body></html>';
+        // Escaped as "<\/body" so dev servers that inject a reload script before the first
+        // closing body tag (e.g. VS Code Live Server) don't insert it inside this string.
+        '<\/body></html>';
     }
     function generateReport() {
       try {
