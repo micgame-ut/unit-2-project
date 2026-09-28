@@ -92,7 +92,7 @@ Replace or expand the implementation placeholders below with tasks specific to t
 ### Delivery
 
 - [x] Commit meaningful checkpoints and export the working chat transcripts — build transcript saved 2026-09-27
-- [ ] Add the provided Project 2 debrief, complete it after verification, and export its transcript
+- [x] Add the provided Project 2 debrief, complete it after verification, and export its transcript — debrief transcript saved 2026-09-27, ticked at the user's direction
 
 ## Revisions
 
