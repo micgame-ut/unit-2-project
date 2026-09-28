@@ -72,10 +72,10 @@ Replace or expand the implementation placeholders below with tasks specific to t
 - [x] Add methodology text and citations (Kamiya/IEA 2020, Mortas 2026, Mills et al.), including confidence-level and social-media-exclusion notes
 
 **Feature 4 — Device matters** (after Feature 3)
-- [ ] Add a device dropdown to the streaming row (phone/laptop/TV) using the confirmed ratios (1x/~20x/~100x)
-- [ ] Add a device dropdown to the gaming row (console/regular PC/gaming PC) using the confirmed figures (~140/~233/~1,400 kWh/yr)
-- [ ] Confirm feature 3's default device assumption matches the corresponding feature 4 tier (no jump when the picker first appears)
-- [ ] Add methodology text for both ratios, including the gaming figure's secondary-source and dated-hardware caveats
+- [x] Add a device dropdown to the streaming row (phone/laptop/TV) — revised: ratios scale only the device's 72% share, average treated as a laptop (≈1 : 3 : 12 overall); see spec Revisions 2026-09-27
+- [x] Add a device dropdown to the gaming row — revised: four devices (older console, current console, regular PC, gaming PC) using measured power during play (Berkeley Lab CEC-500-2019-042; NRDC for current consoles, flagged unverified) instead of yearly kWh ratios; see spec Revisions 2026-09-27
+- [x] Confirm feature 3's default device assumption matches the corresponding feature 4 tier (no jump when the picker first appears) — streaming default laptop = the previous average; gaming default gaming PC keeps its label, but its value moves from the derived 300 W to the measured ~234 W by design
+- [x] Add methodology text for both ratios, including the gaming figure's secondary-source and dated-hardware caveats
 
 **Feature 5 — Uncertainty control** (after Features 1-4)
 - [ ] Add the range toggle; audit every place a carbon/water number is rendered (daily bars, annual bars, mini chart, headline verdict, project totals, digital-habits totals) and swap each to use `whmin`/`whmax` when toggled on
@@ -99,6 +99,8 @@ Replace or expand the implementation placeholders below with tasks specific to t
 **2026-09-21 — Existing unsourced gaming/social/streaming code discovered in index.html.** Before starting implementation, found that `index.html` already carries over rough, explicitly unsourced "gaming," "social media," and "streaming" dropdowns from Project 1 (3-tier pick, folded additively into the same combined comparison baseline AI use is measured against). This conflicts with the approved spec: feature #3 calls for a separate, sourced comparison, and research.md already decided to exclude social media for lack of a source — which this existing code already violates. User decided: restructure to match the approved spec (pull gaming/streaming out of the combined-comparison sentence into the new "Your digital habits" section with sourced figures; add video calls alongside them) and remove the unsourced social-media dropdown entirely. Added to Feature 3's implementation tasks below.
 
 **2026-09-27 — Calculator rebased on Andy Masley's current source.** The Project 1 `index.html` (with the uncommitted 2026-09-21 dropdown removals) and `footprint-calculator.astro` were deleted from the working tree. `calculator/index.html` is now a standalone HTML conversion of the current CC0 source (andymasley.com/visuals/ai-prompt-footprint-source.txt), with the site's spacing/text styles and a fix so it runs under VS Code Live Server; the original is kept unchanged as `calculator/ai-prompt-footprint-source.astro`. Checked the new base against this plan: it has no social/gaming/streaming dropdowns (so Feature 3's two removal tasks remain satisfied without redoing them), and still has everything later features rely on — per-model `whmin`/`whmax` ranges, the "coding / agent session" size, the "An hour on a PS5" reference line, and the Claude disclaimer. Route change only; the specification is unchanged.
+
+**2026-09-27 — Feature 4 figures changed (spec revised).** Streaming device ratios now scale only the device's 72% share of energy, and gaming uses measured power during play for four devices (older and current consoles split) instead of yearly kWh ratios, after new research recorded in research.md. Details and reasons are in spec.md Revisions (2026-09-27). This also replaces Feature 3's derived 300 W gaming-PC figure with ~234 W measured and its streaming energy with the quoted 0.077 kWh/hour.
 
 ## Commands
 

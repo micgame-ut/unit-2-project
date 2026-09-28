@@ -95,18 +95,18 @@ For each feature, define:
 **Need / audience outcome:** Extends feature #3's streaming and gaming inputs with a device selector, since device choice swings the estimate far more than most people expect. Serves Alex (named devices: phone, laptop, TV) and Jordan (desktop/gaming PC).
 
 **Behavior, inputs, outputs:**
-- Adds a device dropdown to the streaming row from feature #3: **phone / laptop / TV**. Adds a device dropdown to the gaming row: **console / regular PC / gaming PC**.
+- Adds a device dropdown to the streaming row from feature #3: **phone / laptop / TV**. Adds a device dropdown to the gaming row: **older console (PS4 / Xbox One) / current console (PS5 / Xbox Series X) / regular PC / gaming PC** (revised 2026-09-27: the single "console" tier was split in two; see Revisions).
 - Video calls get no device picker — Mortas 2026 is camera-on/off only, not device-specific.
 - Changing the device recalculates that row's contribution to the "Your digital habits" total from feature #3; it's a multiplier on an existing input, not a new standalone total.
 
 **Calculations, evidence, uncertainty:**
-- Streaming device ratios, from Kamiya/IEA 2020 (directly verified): a 50" TV uses ~100x a smartphone and ~5x a laptop, so — anchored to phone = 1x — **phone 1x, laptop ~20x, TV ~100x**. Kamiya's own breakdown further attributes 72% of streaming's footprint to the device itself, 23% to data transmission, 5% to data centers — device dominance is well-supported for streaming specifically (unlike the rejected generic AI-use claim in feature #4's original scoping).
-- Gaming device figures, from the Mills research group (~1,400 kWh/yr gaming PC, ~233 kWh/yr regular PC, ~140 kWh/yr console) — same provisional/secondary-source caveat as feature #3, and now also flagged as most directly traceable to an earlier (2015) Mills study rather than the 2019 paper alone (see research.md correction).
+- Streaming device ratios, from Kamiya/IEA 2020 (directly verified): a 50" TV uses ~100x a smartphone and ~5x a laptop, so — anchored to phone = 1x — **phone 1x, laptop ~20x, TV ~100x** *for the device's own electricity*. Kamiya's own breakdown further attributes 72% of streaming's footprint to the device itself, 23% to data transmission, 5% to data centers — device dominance is well-supported for streaming specifically (unlike the rejected generic AI-use claim in feature #4's original scoping). **Revised 2026-09-27:** the ratios scale only that 72% device share; network and data-centre energy stay fixed. Kamiya's average (0.077 kWh/hour, confirmed via Carbon Brief's republication) is treated as a laptop — an assumption stated in the methodology. Result per hour: phone ≈ 0.024, laptop 0.077, TV ≈ 0.299 kWh (about 1 : 3 : 12 overall).
+- ~~Gaming device figures, from the Mills research group (~1,400 kWh/yr gaming PC, ~233 kWh/yr regular PC, ~140 kWh/yr console)~~ **Revised 2026-09-27:** yearly kWh totals mix in hours of use and idle time, so they don't convert to an hour of play. Gaming now uses measured average power *during gameplay* (Berkeley Lab for the California Energy Commission, CEC-500-2019-042, Figure 7; 2016 hardware; directly verified — see research.md): regular PC (entry-level desktops) ~108 W (45–183), gaming PC (mid/high-end desktops) ~234 W (127–328), older console (PS4 / Xbox One models) ~89 W (60–128). Current consoles (PS5 / Xbox Series X) use NRDC 2021's ~160–200 W (typical 180), seen only via news coverage and flagged as unverified. This also replaces feature #3's derived 300 W gaming-PC figure.
 
 **Interface expectations and acceptance checks:**
-- Switching the streaming device between phone/laptop/TV changes the streaming bar by roughly the cited ratios (1x/20x/100x), not a placeholder or flat value.
-- Switching the gaming device between console/regular PC/gaming PC changes the gaming bar by roughly the cited ratios (140/233/1,400 kWh/yr).
-- The methodology section states both ratios' sources and flags the gaming figure's secondary-source and dated-hardware caveats.
+- Switching the streaming device between phone/laptop/TV changes the streaming bar by the device-share ratios (about 1 : 3 : 12; e.g. US grid ≈ 9 / 29 / 114 g CO2e per hour), not a placeholder or flat value. *(Revised 2026-09-27 from "roughly 1x/20x/100x".)*
+- Switching the gaming device changes the gaming bar to that device's measured power during play (older console ~89 W, current console ~180 W, regular PC ~108 W, gaming PC ~234 W, each with its range). *(Revised 2026-09-27 from the 140/233/1,400 kWh/yr ratios.)*
+- The methodology section states both sources, the laptop-as-average assumption, the dated (2016) hardware, and that the current-console figure is unverified.
 - Device selection persists per-row (streaming and gaming can have different device settings independent of each other).
 
 ### Feature 5: Uncertainty control (range toggle + "what if Claude is dense")
@@ -148,6 +148,12 @@ Review the completed specification directly and explicitly approve it before pla
 ## Revisions
 
 If implementation changes the intended result, update the specification and record what changed and why.
+
+**2026-09-27 — Feature 4, streaming device scaling (user decision).** Kamiya gives only device ratios and says the device is 72% of streaming's energy. Scaling the whole per-hour figure by 1x/20x/100x would imply a phone stream uses almost no network or data-centre energy, which contradicts that split. The user chose to scale only the device share, with the 0.077 kWh/hour average treated as a laptop. The streaming acceptance check changes from "roughly 1x/20x/100x" to the resulting ~1 : 3 : 12.
+
+**2026-09-27 — Feature 4, gaming devices (user decision, after new research).** The spec's yearly kWh ratios (140/233/1,400) mix in hours of use and idle time, so they don't describe an hour of play (applied per hour they'd put a console at ~30 W). At the user's direction, per-hour power during gameplay was researched (recorded in research.md): Berkeley Lab's directly verified measurements for PCs and PS4/Xbox One-era consoles, and NRDC's PS5 / Xbox Series X figures, seen only through news coverage. The user chose to offer both console generations, so the gaming picker has four devices instead of three, and the gaming PC changes from feature #3's derived 300 W to the measured ~234 W.
+
+**2026-09-27 — Feature 3, streaming energy figure.** Streaming uses Kamiya's quoted 0.077 kWh/hour (confirmed via Carbon Brief's republication) instead of the 0.075 kWh derived earlier from the page's 480 g/kWh world average; US laptop streaming moves from 28.5 to 29.3 g CO2e per hour.
 
 ## Commands
 

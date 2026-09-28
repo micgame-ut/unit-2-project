@@ -190,7 +190,7 @@
   .aipf-addrow:hover { color: var(--accent-hover); }
   .aipf-addrows { display: flex; flex-wrap: wrap; column-gap: 1.2rem; }
   /* Digital habits: name | device or camera | hours */
-  .aipf-habit-row { display: grid; grid-template-columns: 9rem minmax(0, 15rem) auto; justify-content: start; gap: 0.6rem; align-items: center; }
+  .aipf-habit-row { display: grid; grid-template-columns: 9rem minmax(0, 19rem) auto; justify-content: start; gap: 0.6rem; align-items: center; }
   .aipf-habit-name { font-size: 0.92rem; color: var(--text); }
   @media (max-width: 560px) {
     .aipf-habit-row { grid-template-columns: 1fr auto; grid-template-areas: "name hours" "opt opt"; }
@@ -451,7 +451,7 @@
       <p class="aipf-sub">Other screen time, so you can set your AI use against your own habits rather than a generic reference. This is its own total, never added to your AI figures; each habit you enter appears as its own bar in the charts above.</p>
       <div class="aipf-habits" id="aipf-habits"></div>
       <p class="aipf-proj-out" id="aipf-habits-out" aria-live="polite"></p>
-      <p class="aipf-fine">Streaming: IEA 2020 (institutional). Video calls: a small preliminary study (9 meetings, one setup). Gaming: Berkeley Lab measurements, confirmed only through secondary summaries (provisional). All are costed on your region's grid. Social media is left out: no source measures it. <a href="#methodology" onclick="document.getElementById('methodology').open=true">More in the methodology</a>.</p>
+      <p class="aipf-fine">Streaming: IEA 2020 (institutional); the device changes it because the screen uses most of the energy. Video calls: a small preliminary study (9 meetings, one setup). Gaming: Berkeley Lab measurements of power during play (2016 hardware); current consoles from NRDC, seen only through news coverage (unverified). All are costed on your region's grid. Social media is left out: no source measures it. <a href="#methodology" onclick="document.getElementById('methodology').open=true">More in the methodology</a>.</p>
     </div>
 
     <!-- Project totals: a coding project's agent sessions, kept out of the daily and yearly figures -->
@@ -542,22 +542,39 @@
           grams on one particular grid, so we convert back to electricity using that grid and then cost
           it on the grid for your region, the same way as the AI rows. <em>Streaming</em> uses
           <a href="https://www.iea.org/commentaries/the-carbon-footprint-of-streaming-video-fact-checking-the-headlines" target="_blank" rel="noopener">Kamiya / IEA 2020</a>:
-          about 36 g CO<sub>2</sub> an hour on the global-average grid for the average mix of devices
-          (about 0.075 kWh an hour, using this page's 480 g/kWh world average). That analysis also
-          corrected a widely repeated claim of 3.2 kg an hour, which was about 90 times too high. It is
-          from 2020, and bitrates and grids have shifted since. Institutional source, transparent method.
+          about 0.077 kWh an hour for the average mix of devices (36 g CO<sub>2</sub> on the
+          global-average grid; figures as republished by
+          <a href="https://www.carbonbrief.org/factcheck-what-is-the-carbon-footprint-of-streaming-video-on-netflix/" target="_blank" rel="noopener">Carbon Brief</a>).
+          That analysis also corrected a widely repeated claim of 3.2 kg an hour, which was about 90
+          times too high. It is from 2020, and bitrates and grids have shifted since. Institutional
+          source, transparent method. <strong>The device matters:</strong> Kamiya puts 72% of
+          streaming's energy in the viewing device (23% network, 5% data centres) and says a 50-inch TV
+          uses about 100 times the electricity of a phone and 5 times a laptop. He gives ratios, not
+          per-device amounts, so we treat the average as a laptop and scale only the device's 72% share,
+          leaving network and data-centre energy as they are: a phone comes to about a third of a laptop
+          and a TV to about four times, per hour. Treating the average as a laptop is our assumption.
           <em>Video calls</em> use
           <a href="https://arxiv.org/abs/2601.06045" target="_blank" rel="noopener">Mortas 2026</a>:
           10.2–21.6 g CO<sub>2</sub>e an hour with the camera on and 4.8–10.8 g with it off, measured
           on France's low-carbon grid (79.1 g/kWh), so they come out several times higher on most other
           grids. The typical value is the middle of each range. The author calls this preliminary: 9
           meetings on one laptop and one connection, with no screen sharing. <em>Gaming</em> uses
-          <a href="https://link.springer.com/article/10.1007/s40869-019-00084-2" target="_blank" rel="noopener">Mills et al.</a>
-          (Lawrence Berkeley National Laboratory), who found gaming PCs draw about half their rated
-          power while in use; a typical system rated around 600 W therefore draws about 300 W
-          (roughly 150–450 W across systems). Those measurements date from 2015–2019 and we confirmed
-          them only through Berkeley Lab's own summaries, since the paper is paywalled, so treat them as
-          provisional. None of these sources measures water, so habits are carbon only.
+          power measured during actual gameplay by Lawrence Berkeley National Laboratory for the
+          California Energy Commission
+          (<a href="https://greengaming.lbl.gov/publications" target="_blank" rel="noopener">Mills et al. 2019, CEC-500-2019-042</a>;
+          also <a href="https://link.springer.com/article/10.1007/s40869-019-00084-2" target="_blank" rel="noopener">Mills et al. 2019</a>),
+          which tested 26 systems across dozens of games. Each device's typical value is the average of
+          the systems in that group and its range runs from the lowest to the highest, read from the
+          report's chart of per-system averages: a regular PC (entry-level desktops) about 108 W
+          (45–183 W), a gaming PC (mid-range and high-end desktops) about 234 W (127–328 W), and an
+          older console (PS4 and Xbox One models) about 89 W (60–128 W). That hardware is from 2016, and
+          power swings widely with the game being played. Berkeley Lab did not test current consoles, so
+          a PS5 or Xbox Series X uses NRDC's 2021 measurements of about 160–200 W
+          (<a href="https://www.nrdc.org/bio/noah-horowitz/latest-game-consoles-environmental-winners-or-losers" target="_blank" rel="noopener">NRDC</a>),
+          which we could see only through news coverage of it, because NRDC's page blocked our access;
+          treat that one as unverified. The yearly totals sometimes quoted for gaming (for example about
+          1,400 kWh a year for a gaming PC) are not used here, because they mix in hours of use and idle
+          time. None of these sources measures water, so habits are carbon only.
           <strong>Social media</strong> is left out: we found no source that quantifies it, and this
           page does not guess.
         </p>
@@ -832,18 +849,42 @@
     // on one particular grid, so we back out the energy using that grid. No source measures water.
     const kwhFromGrams = (grams, grid) => grams / grid;
     const midRange = (lo, hi) => [(lo + hi) / 2, lo, hi];
+    // Streaming, Kamiya / IEA 2020: 0.077 kWh per hour for the average device mix (36 g CO2 on the
+    // global-average grid). 72% of that is the viewing device, 28% network and data centres. Kamiya gives
+    // only device ratios (a 50" TV uses ~100x a phone and ~5x a laptop), so we treat the average as a
+    // laptop and scale just the device share; network and data-centre energy stay the same.
+    const STREAM_KWH = 0.077, STREAM_DEVICE_SHARE = 0.72;
+    const STREAM_DEVICES = [
+      { id: 'phone',  label: 'Phone',  ratio: 1 / 20 }, // device energy relative to a laptop
+      { id: 'laptop', label: 'Laptop', ratio: 1 },
+      { id: 'tv',     label: 'TV',     ratio: 5 },
+    ];
+    function streamKwh(deviceId) {
+      const d = STREAM_DEVICES.find((x) => x.id === deviceId) || STREAM_DEVICES[1];
+      return STREAM_KWH * (1 - STREAM_DEVICE_SHARE) + STREAM_KWH * STREAM_DEVICE_SHARE * d.ratio;
+    }
     const HABIT_KWH = {
-      // Kamiya / IEA 2020: ~36 g CO2 per hour on the global-average grid, average device mix. One figure.
-      stream: [kwhFromGrams(36, WORLD_GRID), kwhFromGrams(36, WORLD_GRID), kwhFromGrams(36, WORLD_GRID)],
+      // Each entry is [typical, low, high]; streaming is filled in per device (single figure, no range).
+      stream: null,
       // Mortas 2026 (preliminary: 9 Teams meetings, one laptop, French grid at 79.1 g/kWh). Midpoint = typical.
       callOn: midRange(kwhFromGrams(10.2, 79.1), kwhFromGrams(21.6, 79.1)),
       callOff: midRange(kwhFromGrams(4.8, 79.1), kwhFromGrams(10.8, 79.1)),
-      // Mills et al. (LBNL): measured draw ~50% of nameplate; typical gaming PC ~600 W nameplate -> ~300 W
-      // while gaming, range ~150-450 W across systems.
-      game: [0.3, 0.15, 0.45],
+      // Gaming is filled in per device from GAME_DEVICES below.
+      game: null,
     };
+    // Gaming, kWh per hour of play [typical, low, high]. Berkeley Lab measured average power during
+    // gameplay for 26 systems (Mills et al. 2019, CEC-500-2019-042, Figure 7; 2016 hardware): typical =
+    // mean of the tier's systems, range = lowest to highest system. Current consoles are from NRDC 2021,
+    // seen only through news coverage of it (NRDC's page could not be read directly).
+    const GAME_DEVICES = [
+      { id: 'console-old', label: 'Older console (PS4 / Xbox One)',        kwh: [0.089, 0.060, 0.128] }, // PS4 Slim, PS4 Pro, Xbox One, One S
+      { id: 'console',     label: 'Current console (PS5 / Xbox Series X)', kwh: [0.180, 0.160, 0.200] }, // NRDC 2021, secondary
+      { id: 'pc',          label: 'Regular PC',                            kwh: [0.108, 0.045, 0.183] }, // entry-level desktops E1-E4
+      { id: 'gaming-pc',   label: 'Gaming PC',                             kwh: [0.234, 0.127, 0.328] }, // mid-range + high-end desktops
+    ];
+    const getGameDevice = (id) => GAME_DEVICES.find((d) => d.id === id) || GAME_DEVICES[3];
     const HABIT_LABELS = { stream: 'Streaming video', call: 'Video calls', game: 'Gaming' };
-    const DEFAULT_HABITS = { stream: 0, call: 0, cam: 'on', game: 0 };
+    const DEFAULT_HABITS = { stream: 0, sdev: 'laptop', call: 0, cam: 'on', game: 0, gdev: 'gaming-pc' };
     // location = regional baseline for goods, services, shared infrastructure
     // (home energy and driving are separate knobs below, so they are excluded here)
     // w = BLUE water footprint per capita (freshwater from rivers/lakes/aquifers),
@@ -904,7 +945,8 @@
       { url: 'https://arxiv.org/abs/2604.22750', label: 'Bai et al. 2026, "How Do AI Agents Spend Your Money?" (Microsoft Research preprint) — run-to-run spread in coding-agent token use.' },
       { url: 'https://www.iea.org/commentaries/the-carbon-footprint-of-streaming-video-fact-checking-the-headlines', label: 'Kamiya / IEA 2020, "The carbon footprint of streaming video: fact-checking the headlines" — carbon per hour of streaming.' },
       { url: 'https://arxiv.org/abs/2601.06045', label: 'Mortas 2026, "Assessing the Carbon Footprint of Virtual Meetings" (preliminary) — carbon per hour of video calls, camera on and off.' },
-      { url: 'https://link.springer.com/article/10.1007/s40869-019-00084-2', label: 'Mills et al. 2019, "Toward Greener Gaming" (LBNL; figures confirmed via Berkeley Lab summaries) — gaming PC power draw.' },
+      { url: 'https://greengaming.lbl.gov/publications', label: 'Mills et al. 2019, "A Plug-Loads Game Changer" (Berkeley Lab for the California Energy Commission, CEC-500-2019-042) — measured power during gameplay by system.' },
+      { url: 'https://www.nrdc.org/bio/noah-horowitz/latest-game-consoles-environmental-winners-or-losers', label: 'NRDC (Horowitz) 2021, "Latest Game Consoles: Environmental Winners or Losers?" — PS5 / Xbox Series X power during play (seen via news coverage).' },
     ];
 
     // Daily reference points (all things that emit, so no add/save direction)
@@ -1087,8 +1129,10 @@
 
     // Carbon per hour of a habit, grams [typical, low, high]. Video calls depend on the camera setting.
     function habitPerHour(key) {
-      const k = key === 'call' ? (state.habits.cam === 'off' ? 'callOff' : 'callOn') : key;
       const grid = getLoc().grid;
+      if (key === 'stream') { const g = streamKwh(state.habits.sdev) * grid; return [g, g, g]; }
+      if (key === 'game') return getGameDevice(state.habits.gdev).kwh.map((kwh) => kwh * grid);
+      const k = key === 'call' ? (state.habits.cam === 'off' ? 'callOff' : 'callOn') : key;
       return HABIT_KWH[k].map((kwh) => kwh * grid);
     }
     // Daily carbon of each habit and in total, grams [typical, low, high]. Kept apart from the AI total.
@@ -1188,7 +1232,7 @@
       const p = new URLSearchParams();
       p.set('k', state.metric); p.set('l', state.loc); p.set('h', state.home); p.set('v', state.drive); p.set('d', state.diet); p.set('f', state.fly); p.set('r', r);
       p.set('pm', MODELS.findIndex((m) => m.id === state.proj.model)); p.set('pc', state.proj.count || 0);
-      p.set('hs', state.habits.stream || 0); p.set('hc', state.habits.call || 0); p.set('hk', state.habits.cam); p.set('hg', state.habits.game || 0);
+      p.set('hs', state.habits.stream || 0); p.set('hc', state.habits.call || 0); p.set('hk', state.habits.cam); p.set('hd', state.habits.sdev); p.set('hg', state.habits.game || 0); p.set('hgd', state.habits.gdev);
       return location.origin + location.pathname + '#' + p.toString();
     }
     function readURL() {
@@ -1208,6 +1252,8 @@
           const h = Number(p.get(param)); if (p.get(param) !== null && h >= 0) state.habits[key] = Math.min(24, h);
         }
         if (p.get('hk') === 'on' || p.get('hk') === 'off') state.habits.cam = p.get('hk');
+        if (STREAM_DEVICES.some((d) => d.id === p.get('hd'))) state.habits.sdev = p.get('hd');
+        if (GAME_DEVICES.some((d) => d.id === p.get('hgd'))) state.habits.gdev = p.get('hgd');
         const r = p.get('r');
         if (r) {
           const rows = [];
@@ -1355,8 +1401,16 @@
           cam.appendChild(option('off', 'Camera off', state.habits.cam === 'off'));
           cam.addEventListener('change', () => { state.habits.cam = cam.value; updateOutputs(); });
           r.appendChild(cam);
+        } else if (key === 'stream') {
+          const dev = el('select', 'aipf-rsel'); dev.setAttribute('aria-label', 'Streaming device');
+          for (const d of STREAM_DEVICES) dev.appendChild(option(d.id, d.label, d.id === state.habits.sdev));
+          dev.addEventListener('change', () => { state.habits.sdev = dev.value; updateOutputs(); });
+          r.appendChild(dev);
         } else {
-          r.appendChild(fixedCell(key === 'stream' ? 'Average device mix' : 'Typical gaming PC'));
+          const dev = el('select', 'aipf-rsel'); dev.setAttribute('aria-label', 'Gaming device');
+          for (const d of GAME_DEVICES) dev.appendChild(option(d.id, d.label, d.id === state.habits.gdev));
+          dev.addEventListener('change', () => { state.habits.gdev = dev.value; updateOutputs(); });
+          r.appendChild(dev);
         }
         r.appendChild(hoursStepper(key));
         wrapEl.appendChild(r);
@@ -1617,16 +1671,17 @@
         for (const key of ['stream', 'call', 'game']) {
           const h = state.habits[key] || 0;
           if (h <= 0) continue;
-          const setting = key === 'call' ? (state.habits.cam === 'off' ? 'camera off' : 'camera on') : key === 'stream' ? 'average device mix' : 'typical gaming PC';
-          habitRows += '<tr><td>' + HABIT_LABELS[key] + ' (' + setting + ')</td><td class="n">' + fmtHours(h) + '</td><td class="n">' + fmtCarbon(hd[key][0]) + '</td><td class="n">' + fmtCarbon(hd[key][0] * DAYS) + '</td></tr>';
+          // Shown as e.g. "Gaming: Current console (PS5 / Xbox Series X)"; labels keep their own capitalization.
+          const setting = key === 'call' ? (state.habits.cam === 'off' ? 'Camera off' : 'Camera on') : key === 'stream' ? (STREAM_DEVICES.find((d) => d.id === state.habits.sdev) || STREAM_DEVICES[1]).label : getGameDevice(state.habits.gdev).label;
+          habitRows += '<tr><td>' + HABIT_LABELS[key] + ': ' + escXml(setting) + '</td><td class="n">' + fmtHours(h) + '</td><td class="n">' + fmtCarbon(hd[key][0]) + '</td><td class="n">' + fmtCarbon(hd[key][0] * DAYS) + '</td></tr>';
         }
         const t = hd.total;
         habitsHtml = '<h2>' + (nextSec++) + '. My digital habits (kept separate)</h2>' +
           '<table><thead><tr><th>Habit</th><th class="n">Per day</th><th class="n">CO₂e/day</th><th class="n">CO₂e/year</th></tr></thead><tbody>' + habitRows + '</tbody></table>' +
           '<p>Together about <strong>' + fmtCarbon(t[0]) + ' a day</strong>' + (t[1] === t[2] ? '' : ' (range ' + fmtCarbon(t[1]) + ' to ' + fmtCarbon(t[2]) + ')') +
           ', or <strong>' + fmtCarbon(t[0] * DAYS) + ' a year</strong>, next to my AI use at ' + fmtCarbon(aiDay) + ' a day. This is a separate total, not included in any AI figure above.</p>' +
-          '<p class="muted">Each source’s energy is costed on the average grid for ' + escXml(loc.label) + fn(2) + '. Streaming: IEA, about 36 g CO₂ an hour on the global-average grid' + fn(14) +
-          '. Video calls: a preliminary study of 9 meetings on France’s low-carbon grid' + fn(15) + '. Gaming: Berkeley Lab measurements of gaming PCs, provisional' + fn(16) +
+          '<p class="muted">Each source’s energy is costed on the average grid for ' + escXml(loc.label) + fn(2) + '. Streaming: IEA, about 0.077 kWh an hour for the average device, with the device’s share scaled for the one chosen' + fn(14) +
+          '. Video calls: a preliminary study of 9 meetings on France’s low-carbon grid' + fn(15) + '. Gaming: Berkeley Lab measurements of power during play' + fn(16) + (state.habits.gdev === 'console' ? ', with current consoles from NRDC via news coverage only' + fn(17) : '') +
           '. Water is not estimated for these habits because none of the sources measures it; social media is left out because no source quantifies it.</p>';
       }
       const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
