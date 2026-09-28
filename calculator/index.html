@@ -189,6 +189,13 @@
   }
   .aipf-addrow:hover { color: var(--accent-hover); }
   .aipf-addrows { display: flex; flex-wrap: wrap; column-gap: 1.2rem; }
+  /* Project totals */
+  .aipf-proj-in { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.8rem 1.4rem; margin-bottom: 1rem; }
+  .aipf-proj-field { display: flex; flex-direction: column; gap: 0.3rem; }
+  .aipf-proj-label { font-family: var(--font-body); font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); }
+  .aipf-proj-out { font-size: 1.05rem; line-height: 1.6; color: var(--text-secondary); margin: 0; max-width: 60rem; }
+  .aipf-proj-out b { color: var(--text); }
+  .aipf-proj-fig { display: block; font-family: var(--font-editorial); font-weight: 600; font-size: 1.6rem; line-height: 1.2; color: var(--text); margin-bottom: 0.2rem; }
   /* Read-only cell in an image/video row, sized like the selects beside it. */
   .aipf-rfixed {
     display: block; font-family: var(--font-body); font-size: 0.85rem; color: var(--text-secondary);
@@ -424,9 +431,18 @@
           <div class="aipf-bars aipf-bars--compact" id="aipf-daily-bars" aria-live="polite"></div>
         </div>
         <p class="aipf-fine" id="aipf-grid-note"></p>
-        <p class="aipf-fine">Excludes training, image and video generation, and retries.</p>
+        <p class="aipf-fine">Excludes training and retries. Image and video generation count toward carbon only.</p>
         <p class="aipf-fine">*A note on the Claude models: Anthropic has never said how Claude is built, so EcoLogits has to guess. Its guess is that Claude Opus and Sonnet only use a fraction of their parameters at a time. Some people who follow this closely think Claude actually uses all of them on every token, and if that's right, the Claude numbers here are too low. <a href="#methodology" onclick="document.getElementById('methodology').open=true">More in the methodology below</a>.</p>
       </div>
+    </div>
+
+    <!-- Project totals: a coding project's agent sessions, kept out of the daily and yearly figures -->
+    <div class="aipf-below" aria-label="Project totals">
+      <h2 class="aipf-h2">Project totals: coding-agent sessions</h2>
+      <p class="aipf-sub">For work that comes in bursts, like a coding project, rather than every day. Enter roughly how many agent sessions the whole project takes. This total stands on its own: it is not added to your daily or yearly figures.</p>
+      <div class="aipf-proj-in" id="aipf-proj-in"></div>
+      <p class="aipf-proj-out" id="aipf-proj-out" aria-live="polite"></p>
+      <p class="aipf-fine">Even sessions that look alike vary, and now and then one costs far more than this range. In tests of AI coding agents, how hard people rated a task barely predicted what it would cost, and the agents could not predict it either (<a href="https://arxiv.org/abs/2604.22750" target="_blank" rel="noopener">Bai et al. 2026</a>). One session is EcoLogits' 100,000-token "assist application development" benchmark. <a href="#methodology" onclick="document.getElementById('methodology').open=true">More in the methodology</a>.</p>
     </div>
 
     <!-- Below: a year, split into emissions added vs cuts you could make -->
@@ -499,6 +515,22 @@
           no peer-reviewed study has measured it, and deriving one from a data-center water-use rate we
           could not verify would overstate how sure we are. No embodied-hardware figure is published for
           either, so their carbon is electricity only, and training is excluded as it is everywhere else
+          on this page.
+        </p>
+        <p>
+          <strong>Project totals.</strong> Coding-agent work comes in irregular bursts, so the project
+          section counts whole sessions instead of a daily habit and is never added to the daily or
+          yearly figures. One session is EcoLogits' 100,000-output-token "assist application
+          development" benchmark, the same one behind the "coding / agent session" row. The range
+          starts at EcoLogits' low estimate and ends at twice its high estimate. The doubling comes
+          from <a href="https://arxiv.org/abs/2604.22750" target="_blank" rel="noopener">Bai et al. 2026</a>
+          (Microsoft Research, a preprint), who ran 8 frontier models on 500 real software tasks
+          (SWE-bench Verified) and found the most expensive run of the same task typically cost about
+          twice the cheapest. Their extreme cases reached around 30 times, but that is the tail, not
+          the norm, so it is not built into the range. They also found that how hard people rated a
+          task barely predicted its cost, and that the agents themselves underestimated their own
+          usage. So treat the range as typical, not a ceiling. Benchmark tasks may also differ from
+          your real work. The familiar comparison uses the same sourced reference items as the charts
           on this page.
         </p>
         <p>
@@ -735,6 +767,14 @@
     ];
     const DEFAULT_VIDEO_MODEL = 'veo-3';
 
+    // ---- Project totals (coding-agent sessions over a whole project) ----
+    // One session = EcoLogits' 100k-output-token "assist application development" benchmark (the
+    // 'agent' size above). Low end = EcoLogits' low estimate; high end = its high estimate x RUN_SPREAD,
+    // the ~2x gap Bai et al. 2026 found between the cheapest and most expensive run of the same task
+    // (not their ~30x tail case, which is not typical).
+    const RUN_SPREAD = 2;
+    const DEFAULT_PROJECT = { model: 'claude-sonnet-4-6', count: 10 };
+
     const DEFAULT_ROWS = [
       ['gpt-5.5', 'chat', 15],
       ['claude-sonnet-4-6', 'chat', 8],
@@ -799,6 +839,7 @@
       { url: 'https://www.waterfootprint.org/', label: 'Water Footprint Network (Mekonnen & Hoekstra) and the Water Footprint Calculator — water-consumption figures and the personal water footprint.' },
       { url: 'https://arxiv.org/abs/2311.16863', label: 'Luccioni, Jernite & Strubell 2024, "Power Hungry Processing" (FAccT) — energy per generated image.' },
       { url: 'https://arxiv.org/abs/2607.04553', label: 'Jegham, Gamazaychikov & Luccioni 2026, "Lights, Camera, Carbon" — energy per generated video clip.' },
+      { url: 'https://arxiv.org/abs/2604.22750', label: 'Bai et al. 2026, "How Do AI Agents Spend Your Money?" (Microsoft Research preprint) — run-to-run spread in coding-agent token use.' },
     ];
 
     // Daily reference points (all things that emit, so no add/save direction)
@@ -872,7 +913,7 @@
     const DAYS = 365;
 
     let uidSeq = 1;
-    const state = { rows: [], metric: 'carbon', loc: 'us', home: 'med', drive: 'davg', diet: 'avg', fly: 'some' };
+    const state = { rows: [], metric: 'carbon', loc: 'us', home: 'med', drive: 'davg', diet: 'avg', fly: 'some', proj: Object.assign({}, DEFAULT_PROJECT) };
 
     let root = null;
     const getModel = (id) => MODELS.find((m) => m.id === id) || MODELS[0];
@@ -979,6 +1020,31 @@
     }
     function itemBase(item, metric) { return metric === 'carbon' ? item.c * 1000 : item.w * GAL_TO_L; }
 
+    // Whole-project total for the chosen model and session count: { low, typical, high } in grams or liters.
+    function projectRange(metric) {
+      const t = perPromptTriple(getModel(state.proj.model), 'agent', metric);
+      const n = state.proj.count || 0;
+      return { low: n * t[1], typical: n * t[0], high: n * t[2] * RUN_SPREAD };
+    }
+    // Describe the project range next to a familiar, already-sourced item (daily things plus one-off
+    // purchases and trips), e.g. "about 1.2 to 3.9 times the carbon of a dishwasher load".
+    // Uses the largest item not above the low end, so both multiples are at least 1. Below the smallest
+    // item it switches to "up to N times" or "less than" instead of printing fractions.
+    function projectComparison(low, high, metric) {
+      const items = metric === 'water' ? DAILY_WATER_ITEMS.concat(ANNUAL_WATER_ITEMS) : DAILY_ITEMS.concat(ANNUAL_ITEMS);
+      const pool = items.filter((it) => it.dir !== 'save')
+        .map((it) => ({ label: it.label, v: itemBase(it, metric) }))
+        .filter((it) => it.v > 0)
+        .sort((a, b) => a.v - b.v);
+      let ref = null;
+      for (const it of pool) if (it.v <= low) ref = it;
+      const what = (it) => ' the ' + metricWord() + ' of ' + esc(it.label.charAt(0).toLowerCase() + it.label.slice(1));
+      if (ref) return 'about <b>' + sig(low / ref.v) + ' to ' + sig(high / ref.v) + ' times</b>' + what(ref);
+      const smallest = pool[0];
+      if (high >= smallest.v) return 'up to <b>' + sig(high / smallest.v) + ' times</b>' + what(smallest);
+      return '<b>less than</b>' + what(smallest);
+    }
+
     function isCodeRow(row) {
       if (rowKind(row) !== 'text' || row.size !== 'agent') return false;
       const o = SIZE_LABEL_OVERRIDES[row.model];
@@ -1025,6 +1091,7 @@
       }).join('.');
       const p = new URLSearchParams();
       p.set('k', state.metric); p.set('l', state.loc); p.set('h', state.home); p.set('v', state.drive); p.set('d', state.diet); p.set('f', state.fly); p.set('r', r);
+      p.set('pm', MODELS.findIndex((m) => m.id === state.proj.model)); p.set('pc', state.proj.count || 0);
       return location.origin + location.pathname + '#' + p.toString();
     }
     function readURL() {
@@ -1038,6 +1105,8 @@
         const vv = p.get('v'); if (vv && DRIVING.some((x) => x.id === vv)) state.drive = vv;
         const d = p.get('d'); if (d && DIETS.some((x) => x.id === d)) state.diet = d;
         const f = p.get('f'); if (f && FLYING.some((x) => x.id === f)) state.fly = f;
+        const pm = MODELS[Number(p.get('pm'))]; if (p.get('pm') !== null && pm) state.proj.model = pm.id;
+        const pc = Number(p.get('pc')); if (p.get('pc') !== null && pc >= 0) state.proj.count = Math.min(100000, pc);
         const r = p.get('r');
         if (r) {
           const rows = [];
@@ -1062,13 +1131,14 @@
     function setDefaultRows() { state.rows = DEFAULT_ROWS.map((r) => ({ uid: uidSeq++, model: r[0], size: r[1], count: r[2] })); }
 
     // ---- Usage rows ----
-    function modelSelect(row) {
+    // onChange defaults to re-rendering the usage rows; the project picker passes its own.
+    function modelSelect(row, onChange) {
       const sel = el('select', 'aipf-rsel');
       sel.setAttribute('aria-label', 'Model');
       const groups = [];
       for (const m of MODELS) { let g = groups.find((x) => x.name === m.group); if (!g) { g = { name: m.group, items: [] }; groups.push(g); } g.items.push(m); }
       for (const g of groups) { const og = document.createElement('optgroup'); og.label = g.name; for (const m of g.items) og.appendChild(option(m.id, m.name, m.id === row.model)); sel.appendChild(og); }
-      sel.addEventListener('change', () => { row.model = sel.value; renderRows(); updateOutputs(); });
+      sel.addEventListener('change', () => { row.model = sel.value; if (onChange) onChange(); else { renderRows(); updateOutputs(); } });
       return sel;
     }
     function videoSelect(row) {
@@ -1153,6 +1223,28 @@
         wrapEl.textContent = fmtMetric(per) + ' each, ' + fmtMetric(contr) + ' a day, ' + shareStr + '% of your AI ' + metricWord();
       }
     }
+    // Project inputs are built once; their outputs refresh in renderProject().
+    function renderProjectInputs() {
+      const box = root.querySelector('#aipf-proj-in');
+      box.innerHTML = '';
+      const m = el('label', 'aipf-proj-field'); m.appendChild(el('span', 'aipf-proj-label', 'Model'));
+      m.appendChild(modelSelect(state.proj, updateOutputs));
+      const s = el('div', 'aipf-proj-field'); s.appendChild(el('span', 'aipf-proj-label', 'Agent sessions in the project'));
+      s.appendChild(stepper(state.proj));
+      box.appendChild(m); box.appendChild(s);
+    }
+    function renderProject() {
+      const box = root.querySelector('#aipf-proj-out');
+      const n = state.proj.count || 0;
+      if (n <= 0) { box.innerHTML = 'Add some sessions to see a project total.'; return; }
+      const r = projectRange(state.metric);
+      box.innerHTML =
+        '<span class="aipf-proj-fig"><span class="aipf-nw">' + fmtMetric(r.low) + '</span> to <span class="aipf-nw">' + fmtMetric(r.high) + '</span></span>' +
+        'for ' + n.toLocaleString('en-US') + ' session' + (n === 1 ? '' : 's') + ' with ' + esc(getModel(state.proj.model).name) +
+        ', ' + projectComparison(r.low, r.high, state.metric) + '. ' +
+        'EcoLogits’ typical estimate alone would be ' + fmtMetric(r.typical) + '; the range runs from its low estimate to twice its high estimate, because the same task can cost about twice as much on one run as another.';
+    }
+
     function renderLifeSelects() {
       function fill(id, list, cur) { const sel = root.querySelector(id); sel.innerHTML = ''; for (const x of list) sel.appendChild(option(x.id, x.label, x.id === cur)); }
       fill('#aipf-loc', LOCATIONS, state.loc);
@@ -1203,7 +1295,7 @@
     function renderGridNote() {
       const box = root.querySelector('#aipf-grid-note');
       box.style.display = '';
-      if (state.metric === 'carbon') box.textContent = 'AI carbon uses the ' + getLoc().label + ' grid for electricity, plus EcoLogits’ embodied hardware emissions.';
+      if (state.metric === 'carbon') box.textContent = 'AI carbon costs electricity on the average grid for ' + getLoc().label + ', plus EcoLogits’ embodied hardware emissions.';
       else box.textContent = 'Water is blue water only: freshwater drawn from rivers, lakes, and aquifers. Green rainwater (most of food’s footprint) is excluded.' +
         (hasMediaRows() ? ' Image and video generation are left out of water: no verified figure exists.' : '');
       if (state.metric === 'carbon' && hasMediaRows()) box.textContent += ' Image and video generation add electricity only (no embodied figure is published).';
@@ -1280,7 +1372,7 @@
     }
 
     function updateOutputs() {
-      renderRunning(); updateRowMeta(); renderHeadline(); renderGridNote(); renderWords(); renderDaily(); renderAnnualSplit();
+      renderRunning(); updateRowMeta(); renderHeadline(); renderGridNote(); renderWords(); renderDaily(); renderAnnualSplit(); renderProject();
     }
     // ---- Cited report ----
     function escXml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -1339,6 +1431,19 @@
       let refsHtml = '';
       REPORT_REFS.forEach((r, i) => { refsHtml += '<li id="ref' + (i + 1) + '">[' + (i + 1) + '] ' + escXml(r.label) + ' <a href="' + r.url + '">' + escXml(r.url) + '</a></li>'; });
       const fn = (n) => '<sup><a href="#ref' + n + '">[' + n + ']</a></sup>';
+      // Section 11, only when a project is entered. It is a one-off total, never added to the figures above.
+      let projHtml = '';
+      const pn = state.proj.count || 0;
+      if (pn > 0) {
+        const pc = projectRange('carbon'), pw = projectRange('water');
+        projHtml = '<h2>11. A coding project (kept separate)</h2>' +
+          '<p>' + pn.toLocaleString('en-US') + ' coding-agent session' + (pn === 1 ? '' : 's') + ' with ' + escXml(getModel(state.proj.model).name) +
+          ' come to about <strong>' + fmtCarbon(pc.low) + ' to ' + fmtCarbon(pc.high) + '</strong> and <strong>' + fmtWater(pw.low) + ' to ' + fmtWater(pw.high) +
+          '</strong> of water (EcoLogits’ typical estimate: ' + fmtCarbon(pc.typical) + ' and ' + fmtWater(pw.typical) + ').' + fn(1) +
+          ' This is a total for the whole project, not included in any daily or yearly figure above.</p>' +
+          '<p class="muted">One session is EcoLogits’ 100,000-token “assist application development” benchmark' + fn(1) + ', with electricity costed on the average grid for ' + escXml(loc.label) + fn(2) +
+          '. The range runs from EcoLogits’ low estimate to twice its high estimate, because the same coding task typically costs about twice as much on one run as another; occasional runs cost far more, and how hard a task looks barely predicts its cost.' + fn(13) + '</p>';
+      }
       const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
       return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' +
         '<title>How my AI use contributes to my carbon emissions and water use</title><style>' +
@@ -1354,7 +1459,7 @@
         '<h2>1. What I entered</h2>' +
         '<table><thead><tr><th>Model</th><th>Typical output</th><th class="n">Per day</th><th class="n">CO₂e/day</th><th class="n">Water/day</th></tr></thead><tbody>' +
         (rowsHtml || '<tr><td colspan="5">No usage entered.</td></tr>') + '</tbody></table>' +
-        '<p class="muted">Per-prompt figures come from the EcoLogits model' + fn(1) + '; the electricity is costed on the ' + escXml(loc.label) + ' grid' + fn(2) + ', and EcoLogits’ embodied hardware emissions are kept.' +
+        '<p class="muted">Per-prompt figures come from the EcoLogits model' + fn(1) + '; the electricity is costed on the average grid for ' + escXml(loc.label) + fn(2) + ', and EcoLogits’ embodied hardware emissions are kept.' +
           (hasMediaRows() ? ' Image generation uses Luccioni et al.’s measured energy per image' + fn(11) + ' and video generation Jegham et al.’s per-clip energy' + fn(12) + ' (the midpoint of the published range for proprietary models); both are electricity only, and water is not estimated for them because no verified figure exists.' : '') + '</p>' +
         '<h2>2. My AI carbon</h2>' +
         '<p>Across these prompts, my AI use comes to about <strong>' + fmtCarbon(aiDay) + ' per day</strong> (range ' + fmtCarbon(aiMin) + ' to ' + fmtCarbon(aiMax) + '), or <strong>' + fmtCarbon(aiYr) + ' per year</strong>, drawing about ' + fmtEnergy(eD) + ' of electricity a day.' + fn(1) + fn(2) + ' The range is EcoLogits’ 95% interval, mostly uncertainty in the parameter counts of closed models.' + fn(1) + '</p>' +
@@ -1373,6 +1478,7 @@
         '<h2>9. In a year, water I add</h2>' + reportBarsSVG(addWaterRows, fmtWater) +
         '<h2>10. In a year, water I could cut</h2>' + reportBarsSVG(cutWaterRows, fmtWater) +
         '<p class="muted">Water comparisons from EcoLogits' + fn(1) + ' and the Water Footprint Network' + fn(10) + '.</p>' +
+        projHtml +
         '<h2>References</h2><ol class="refs">' + refsHtml + '</ol>' +
         // Escaped as "<\/body" so dev servers that inject a reload script before the first
         // closing body tag (e.g. VS Code Live Server) don't insert it inside this string.
@@ -1422,7 +1528,7 @@
       if (!root || root.dataset.ready === '1') return;
       root.dataset.ready = '1';
       setDefaultRows(); readURL();
-      renderRows(); renderLifeSelects(); renderMetricToggle(); bindEvents(); updateOutputs();
+      renderRows(); renderLifeSelects(); renderProjectInputs(); renderMetricToggle(); bindEvents(); updateOutputs();
     }
     if (document.readyState !== 'loading') init();
     else document.addEventListener('DOMContentLoaded', init);

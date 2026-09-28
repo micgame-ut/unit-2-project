@@ -57,11 +57,11 @@ Replace or expand the implementation placeholders below with tasks specific to t
 - [x] Add methodology text and citations for both row types, including the water-exclusion rationale
 
 **Feature 2 — Project totals**
-- [ ] Add a new "Project totals" section, separate from the per-day table
-- [ ] Add model picker (reuse existing model list) and a session-count input
-- [ ] Compute the project total as a range (low = benchmark's low CI, high = ~2x per Bai et al. 2026), shown next to a familiar comparison
-- [ ] Add the footnote on run-to-run variance and difficulty not predicting cost
-- [ ] Confirm the project total is not added into the annual chart
+- [x] Add a new "Project totals" section, separate from the per-day table
+- [x] Add model picker (reuse existing model list) and a session-count input
+- [x] Compute the project total as a range (low = benchmark's low CI, high = ~2x per Bai et al. 2026), shown next to a familiar comparison — high end = 2x EcoLogits' high estimate (user decision 2026-09-27); comparison = largest sourced reference item not above the low end, with "up to N times" / "less than" wording below the smallest item (user decision 2026-09-27). Project also added to the downloadable report as section 11 (user request)
+- [x] Add the footnote on run-to-run variance and difficulty not predicting cost
+- [x] Confirm the project total is not added into the annual chart
 
 **Feature 3 — Everyday digital habits**
 - [x] Remove the existing unsourced "social media" dropdown (state, UI, URL param) from the combined comparison sentence — done 2026-09-21, ahead of the rest of this feature, at the user's direct request after seeing it in the running page. That edit was lost with the old file, but the 2026-09-27 rebased `index.html` never had this dropdown, so it stays satisfied.
