@@ -43,7 +43,7 @@ Replace or expand the implementation placeholders below with tasks specific to t
 
 ### Approval gates
 
-- [ ] User has reviewed, verified, and approved the research claims and selected features
+- [x] User has reviewed, verified, and approved the research claims and selected features — user confirmed 2026-09-27
 - [x] User has reviewed and approved the specification — user confirmed 2026-09-27
 - [x] User has reviewed and approved the implementation approach and task sequence — user confirmed 2026-09-27
 
@@ -85,9 +85,9 @@ Replace or expand the implementation placeholders below with tasks specific to t
 
 ### Verification
 
-- [ ] User has checked feature behavior and calculations against the specification and sources independently of the agent
-- [ ] User has confirmed factual and numerical claims have working citations and communicate important limitations or uncertainty
-- [ ] User has confirmed the project runs locally, serves all three reference profiles, and matches the specification
+- [x] User has checked feature behavior and calculations against the specification and sources independently of the agent — user confirmed 2026-09-27
+- [x] User has confirmed factual and numerical claims have working citations and communicate important limitations or uncertainty — user confirmed 2026-09-27
+- [x] User has confirmed the project runs locally, serves all three reference profiles, and matches the specification — user confirmed 2026-09-27
 
 ### Delivery
 
