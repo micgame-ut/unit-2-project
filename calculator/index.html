@@ -188,6 +188,13 @@
     text-decoration: underline; text-underline-offset: 3px;
   }
   .aipf-addrow:hover { color: var(--accent-hover); }
+  .aipf-addrows { display: flex; flex-wrap: wrap; column-gap: 1.2rem; }
+  /* Read-only cell in an image/video row, sized like the selects beside it. */
+  .aipf-rfixed {
+    display: block; font-family: var(--font-body); font-size: 0.85rem; color: var(--text-secondary);
+    padding: 0.32rem 0.6rem; border: 1px dashed var(--border-strong); border-radius: 5px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
 
   .aipf-running { margin: 1rem 0 0; padding-top: 0.9rem; border-top: 1px solid var(--border); font-size: 1.05rem; line-height: 1.6; color: var(--text-secondary); }
   .aipf-tools { margin: 0.6rem 0 0; font-family: var(--font-body); font-size: 0.78rem; color: var(--dim); }
@@ -377,10 +384,14 @@
       <div class="aipf-in" aria-label="Your daily AI usage">
         <div class="aipf-in-head"><span>Your AI use</span><span class="aipf-in-sub">per day</span></div>
         <div class="aipf-rows-head" aria-hidden="true">
-          <span>Model</span><span>Typical output</span><span>Prompts/day</span><span></span>
+          <span>Model</span><span>Typical output</span><span>Per day</span><span></span>
         </div>
         <div class="aipf-rows" id="aipf-rows"></div>
-        <button type="button" class="aipf-addrow" id="aipf-addrow">+ add another</button>
+        <div class="aipf-addrows">
+          <button type="button" class="aipf-addrow" id="aipf-addrow">+ add text prompts</button>
+          <button type="button" class="aipf-addrow" id="aipf-addimage">+ add image generation</button>
+          <button type="button" class="aipf-addrow" id="aipf-addvideo">+ add video generation</button>
+        </div>
         <p class="aipf-running" id="aipf-running" aria-live="polite"></p>
         <div class="aipf-writes">
           <p class="aipf-writes-h">What it writes</p>
@@ -465,6 +476,30 @@
           and <a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank" rel="noopener">Our World in Data</a>:
           roughly 380 (US), 215 (EU), 125 (UK), 580 (China), 700 (India), and 480 (world)
           g CO<sub>2</sub>e/kWh. Water is left on EcoLogits' global basis.
+        </p>
+        <p>
+          <strong>Image and video generation.</strong> These rows use energy per output from two
+          studies, costed on your region's grid like the text prompts. <em>Images</em> use one figure
+          for any tool: about 2.9 Wh per image, measured by
+          <a href="https://arxiv.org/abs/2311.16863" target="_blank" rel="noopener">Luccioni, Jernite &amp; Strubell 2024</a>
+          (FAccT) as 2.907 kWh per 1,000 images on a single hardware setup (8 NVIDIA A100 GPUs). The authors
+          say this is not representative of every deployment, and it predates newer image models, so
+          treat it as an order of magnitude, not a per-tool number; the study gives no range, so none is
+          shown. <em>Video</em> uses per-model, per-clip figures from
+          <a href="https://arxiv.org/abs/2607.04553" target="_blank" rel="noopener">Jegham, Gamazaychikov &amp; Luccioni 2026</a>,
+          at the clip length and resolution the paper reports for each model, which differ, so compare
+          models with care. The open models (LTX-2 at about 2.95 Wh for a 3-second 1024p clip,
+          HunyuanVideo-1.5 at about 478.5 Wh for an 8-second clip on 8 GPUs) were measured directly on
+          real GPUs, with under 3% error. The proprietary models (8-second, 720p clips) could not be
+          measured, so the authors estimated them from API response times and assumed hardware, and give
+          a range: Veo 3 19.8–43.4 Wh, Seedance-1 72.1–87.9 Wh, Gen-4.5 241.6–410.9 Wh, and Sora 2.0 Pro
+          315.1–534.4 Wh. The typical value shown here is the middle of each range; that choice is ours,
+          not the paper's. Energy grows faster than clip length or resolution, so a longer or sharper
+          clip can cost far more than these. <strong>Water is not estimated for images or video</strong>:
+          no peer-reviewed study has measured it, and deriving one from a data-center water-use rate we
+          could not verify would overstate how sure we are. No embodied-hardware figure is published for
+          either, so their carbon is electricity only, and training is excluded as it is everywhere else
+          on this page.
         </p>
         <p>
           <strong>Output, words, and code.</strong> Each row maps to an EcoLogits output-token count:
@@ -676,6 +711,30 @@
     const TOKENS_PER_LINE = 10;   // rough tokens per line of code
     const CODE_FRACTION = 0.15;   // only ~15% of an agent session's output is final code; the rest is reasoning, tool calls, file exploration, and explanation (wide uncertainty)
 
+    // ---- Image and video generation ("Beyond the prompt") ----
+    // Energy per output only. No verified per-image or per-video water figure exists, so these rows
+    // add carbon but not water; and no embodied-hardware figure is published for them, so their
+    // carbon is just their electricity on the selected region's grid.
+    // Image: Luccioni, Jernite & Strubell 2024 (FAccT) measured 2.907 kWh per 1,000 images on one
+    // hardware setup (8x A100). One order-of-magnitude figure for any tool, with no published range.
+    const IMAGE_GEN = { name: 'Image generation', output: 'One image (any tool)', wh: 2.907, whmin: 2.907, whmax: 2.907 };
+    // Video: Jegham, Gamazaychikov & Luccioni 2026, per clip at the length/resolution the paper reports
+    // for each model. Open models were measured directly (one figure). Proprietary models were estimated
+    // from API latency and assumed hardware and published as a low-high range; we use its midpoint as
+    // the typical value.
+    function videoModel(id, name, group, clip, whmin, whmax) {
+      return { id: id, name: name, group: group, clip: clip, whmin: whmin, whmax: whmax, wh: (whmin + whmax) / 2 };
+    }
+    const VIDEO_MODELS = [
+      videoModel('ltx-2', 'LTX-2', 'Open models (measured)', '3 s clip, 1024p', 2.95, 2.95),
+      videoModel('hunyuanvideo-1.5', 'HunyuanVideo-1.5', 'Open models (measured)', '8 s clip, 8-GPU run', 478.5, 478.5),
+      videoModel('veo-3', 'Veo 3', 'Proprietary (estimated)', '8 s clip, 720p', 19.8, 43.4),
+      videoModel('seedance-1', 'Seedance-1', 'Proprietary (estimated)', '8 s clip, 720p', 72.1, 87.9),
+      videoModel('gen-4.5', 'Gen-4.5', 'Proprietary (estimated)', '8 s clip, 720p', 241.6, 410.9),
+      videoModel('sora-2-pro', 'Sora 2.0 Pro', 'Proprietary (estimated)', '8 s clip, 720p', 315.1, 534.4),
+    ];
+    const DEFAULT_VIDEO_MODEL = 'veo-3';
+
     const DEFAULT_ROWS = [
       ['gpt-5.5', 'chat', 15],
       ['claude-sonnet-4-6', 'chat', 8],
@@ -738,6 +797,8 @@
       { url: 'https://iopscience.iop.org/article/10.1088/1748-9326/ab8589', label: 'Ivanova et al. 2020 — housing and transport mitigation options.' },
       { url: 'https://www.founderspledge.com/research/climate-and-lifestyle-report', label: 'Founders Pledge, Climate & Lifestyle report — the lifestyle-cut comparison.' },
       { url: 'https://www.waterfootprint.org/', label: 'Water Footprint Network (Mekonnen & Hoekstra) and the Water Footprint Calculator — water-consumption figures and the personal water footprint.' },
+      { url: 'https://arxiv.org/abs/2311.16863', label: 'Luccioni, Jernite & Strubell 2024, "Power Hungry Processing" (FAccT) — energy per generated image.' },
+      { url: 'https://arxiv.org/abs/2607.04553', label: 'Jegham, Gamazaychikov & Luccioni 2026, "Lights, Camera, Carbon" — energy per generated video clip.' },
     ];
 
     // Daily reference points (all things that emit, so no add/save direction)
@@ -816,6 +877,7 @@
     let root = null;
     const getModel = (id) => MODELS.find((m) => m.id === id) || MODELS[0];
     const getLoc = () => LOCATIONS.find((x) => x.id === state.loc) || LOCATIONS[0];
+    const getVideoModel = (id) => VIDEO_MODELS.find((m) => m.id === id) || VIDEO_MODELS[0];
 
     // ---- Formatting ----
     function fmtNum(n) {
@@ -875,18 +937,37 @@
       }
       return [s.ml / 1000, s.mlmin / 1000, s.mlmax / 1000];
     }
-    function totalPrompts() { let n = 0; for (const r of state.rows) n += r.count || 0; return n; }
+    // Each usage row is a text prompt (model x output length), an image, or a video clip.
+    // Rows saved before image/video existed have no kind, so they count as text.
+    const rowKind = (r) => r.kind || 'text';
+    // Wh per prompt, image, or clip: [typical, low, high].
+    function rowUnitEnergy(r) {
+      const k = rowKind(r);
+      if (k === 'image') return [IMAGE_GEN.wh, IMAGE_GEN.whmin, IMAGE_GEN.whmax];
+      if (k === 'video') { const v = getVideoModel(r.model); return [v.wh, v.whmin, v.whmax]; }
+      const s = getModel(r.model).sizes[r.size];
+      return [s.wh, s.whmin, s.whmax];
+    }
+    // Per-unit impact of a row: [typical, low, high] in grams CO2e or liters.
+    function rowTriple(r, metric) {
+      if (rowKind(r) === 'text') return perPromptTriple(getModel(r.model), r.size, metric);
+      if (metric === 'water') return [0, 0, 0]; // not estimated for image/video (no verified figure)
+      const grid = getLoc().grid;
+      return rowUnitEnergy(r).map((wh) => (wh / 1000) * grid);
+    }
+    function countOf(kind) { let n = 0; for (const r of state.rows) if (rowKind(r) === kind) n += r.count || 0; return n; }
+    const hasMediaRows = () => countOf('image') + countOf('video') > 0;
     function aiDailyTriple(metric) {
       let a = 0, b = 0, c = 0;
       for (const r of state.rows) {
         if (!r.count) continue;
-        const t = perPromptTriple(getModel(r.model), r.size, metric);
+        const t = rowTriple(r, metric);
         a += r.count * t[0]; b += r.count * t[1]; c += r.count * t[2];
       }
       return [a, b, c];
     }
     const aiDaily = (metric) => aiDailyTriple(metric)[0];
-    function aiDailyEnergy() { let t = 0; for (const r of state.rows) if (r.count) t += r.count * getModel(r.model).sizes[r.size].wh; return t; }
+    function aiDailyEnergy() { let t = 0; for (const r of state.rows) if (r.count) t += r.count * rowUnitEnergy(r)[0]; return t; }
     function dailyFootprint(metric) {
       const loc = getLoc();
       const home = HOMES.find((x) => x.id === state.home) || HOMES[1];
@@ -899,14 +980,14 @@
     function itemBase(item, metric) { return metric === 'carbon' ? item.c * 1000 : item.w * GAL_TO_L; }
 
     function isCodeRow(row) {
-      if (row.size !== 'agent') return false;
+      if (rowKind(row) !== 'text' || row.size !== 'agent') return false;
       const o = SIZE_LABEL_OVERRIDES[row.model];
       return !(o && o.agent);
     }
     function linesForSize(s) { return Math.round((s.w / TOKENS_PER_WORD) * CODE_FRACTION / TOKENS_PER_LINE); }
     function dailyWords() {
       let n = 0;
-      for (const r of state.rows) if (r.count && !isCodeRow(r)) n += r.count * (SIZES.find((s) => s.id === r.size) || { w: 0 }).w;
+      for (const r of state.rows) if (r.count && rowKind(r) === 'text' && !isCodeRow(r)) n += r.count * (SIZES.find((s) => s.id === r.size) || { w: 0 }).w;
       return n;
     }
     function dailyCodeLines() {
@@ -935,7 +1016,13 @@
 
     // ---- URL state ----
     function buildShareURL() {
-      const r = state.rows.map((row) => MODELS.findIndex((m) => m.id === row.model) + '-' + SIZES.findIndex((s) => s.id === row.size) + '-' + (row.count || 0)).join('.');
+      // Text rows: "model-size-count"; image rows: "i-count"; video rows: "v-model-count".
+      const r = state.rows.map((row) => {
+        const k = rowKind(row), n = row.count || 0;
+        if (k === 'image') return 'i-' + n;
+        if (k === 'video') return 'v-' + VIDEO_MODELS.findIndex((m) => m.id === row.model) + '-' + n;
+        return MODELS.findIndex((m) => m.id === row.model) + '-' + SIZES.findIndex((s) => s.id === row.size) + '-' + n;
+      }).join('.');
       const p = new URLSearchParams();
       p.set('k', state.metric); p.set('l', state.loc); p.set('h', state.home); p.set('v', state.drive); p.set('d', state.diet); p.set('f', state.fly); p.set('r', r);
       return location.origin + location.pathname + '#' + p.toString();
@@ -955,6 +1042,16 @@
         if (r) {
           const rows = [];
           for (const part of r.split('.')) {
+            if (part.startsWith('i-')) {
+              const n = Number(part.slice(2));
+              if (n >= 0) rows.push({ uid: uidSeq++, kind: 'image', count: Math.min(100000, n) });
+              continue;
+            }
+            if (part.startsWith('v-')) {
+              const v = part.slice(2).split('-').map(Number);
+              if (VIDEO_MODELS[v[0]] && v[1] >= 0) rows.push({ uid: uidSeq++, kind: 'video', model: VIDEO_MODELS[v[0]].id, count: Math.min(100000, v[1]) });
+              continue;
+            }
             const a = part.split('-').map(Number);
             if (MODELS[a[0]] && SIZES[a[1]] && a[2] >= 0) rows.push({ uid: uidSeq++, model: MODELS[a[0]].id, size: SIZES[a[1]].id, count: Math.min(100000, a[2]) });
           }
@@ -974,6 +1071,18 @@
       sel.addEventListener('change', () => { row.model = sel.value; renderRows(); updateOutputs(); });
       return sel;
     }
+    function videoSelect(row) {
+      const sel = el('select', 'aipf-rsel');
+      sel.setAttribute('aria-label', 'Video model');
+      const groups = [];
+      for (const m of VIDEO_MODELS) { let g = groups.find((x) => x.name === m.group); if (!g) { g = { name: m.group, items: [] }; groups.push(g); } g.items.push(m); }
+      for (const g of groups) { const og = document.createElement('optgroup'); og.label = g.name; for (const m of g.items) og.appendChild(option(m.id, m.name, m.id === row.model)); sel.appendChild(og); }
+      // Re-render so the clip-length cell follows the chosen model.
+      sel.addEventListener('change', () => { row.model = sel.value; renderRows(); updateOutputs(); });
+      return sel;
+    }
+    // Read-only cell in the select columns, for image/video rows that have nothing to pick there.
+    function fixedCell(text) { const c = el('span', 'aipf-rsel aipf-rfixed'); c.textContent = text; return c; }
     function sizeSelect(row) {
       const sel = el('select', 'aipf-rsel');
       sel.setAttribute('aria-label', 'Typical output length');
@@ -1006,8 +1115,17 @@
       for (const row of state.rows) {
         const wrapEl = el('div', 'aipf-rowwrap'); wrapEl.dataset.uid = String(row.uid);
         const r = el('div', 'aipf-row');
-        r.appendChild(modelSelect(row));
-        r.appendChild(sizeSelect(row));
+        const kind = rowKind(row);
+        if (kind === 'image') {
+          r.appendChild(fixedCell(IMAGE_GEN.name));
+          r.appendChild(fixedCell(IMAGE_GEN.output));
+        } else if (kind === 'video') {
+          r.appendChild(videoSelect(row));
+          r.appendChild(fixedCell('One ' + getVideoModel(row.model).clip));
+        } else {
+          r.appendChild(modelSelect(row));
+          r.appendChild(sizeSelect(row));
+        }
         r.appendChild(stepper(row));
         const rm = el('button', 'aipf-rowdel', '×'); rm.type = 'button'; rm.setAttribute('aria-label', 'Remove this row');
         rm.addEventListener('click', () => { state.rows = state.rows.filter((x) => x.uid !== row.uid); renderRows(); updateOutputs(); });
@@ -1023,7 +1141,12 @@
       for (const row of state.rows) {
         const wrapEl = root.querySelector('.aipf-rowwrap[data-uid="' + row.uid + '"] .aipf-row-meta');
         if (!wrapEl) continue;
-        const per = perPromptTriple(getModel(row.model), row.size, state.metric)[0];
+        const kind = rowKind(row);
+        if (kind !== 'text' && state.metric === 'water') {
+          wrapEl.textContent = 'Water not estimated for ' + kind + ' generation: no verified figure exists (see the methodology).';
+          continue;
+        }
+        const per = rowTriple(row, state.metric)[0];
         const contr = (row.count || 0) * per;
         const share = total > 0 ? (contr / total) * 100 : 0;
         const shareStr = share >= 10 ? Math.round(share) : share.toFixed(1);
@@ -1042,13 +1165,20 @@
     // ---- Outputs ----
     function renderRunning() {
       const box = root.querySelector('#aipf-running');
-      const n = totalPrompts();
       const cD = aiDaily('carbon'), wD = aiDaily('water'), eD = aiDailyEnergy();
-      if (n <= 0) { box.innerHTML = 'Nothing entered yet.'; return; }
+      // "27 prompts, 4 images and 1 video clip"
+      const parts = [];
+      for (const [kind, noun] of [['text', 'prompt'], ['image', 'image'], ['video', 'video clip']]) {
+        const n = countOf(kind);
+        if (n > 0) parts.push('<b>' + n.toLocaleString('en-US') + '</b> ' + noun + (n === 1 ? '' : 's'));
+      }
+      if (!parts.length) { box.innerHTML = 'Nothing entered yet.'; return; }
+      const list = parts.length > 1 ? parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1] : parts[0];
       box.innerHTML =
-        'That is <b>' + n.toLocaleString('en-US') + '</b> prompts a day, costing about <b>' + fmtCarbon(cD) +
+        'That is ' + list + ' a day, costing about <b>' + fmtCarbon(cD) +
         '</b> and <b>' + fmtWater(wD) + '</b> (' + fmtEnergy(eD) + '). Over a year, <b>' + fmtCarbon(cD * DAYS) +
-        '</b> and <b>' + fmtWater(wD * DAYS) + '</b>.';
+        '</b> and <b>' + fmtWater(wD * DAYS) + '</b>.' +
+        (hasMediaRows() ? ' Water counts text prompts only: no verified figure exists for image or video generation.' : '');
     }
 
     function renderHeadline() {
@@ -1074,7 +1204,9 @@
       const box = root.querySelector('#aipf-grid-note');
       box.style.display = '';
       if (state.metric === 'carbon') box.textContent = 'AI carbon uses the ' + getLoc().label + ' grid for electricity, plus EcoLogits’ embodied hardware emissions.';
-      else box.textContent = 'Water is blue water only: freshwater drawn from rivers, lakes, and aquifers. Green rainwater (most of food’s footprint) is excluded.';
+      else box.textContent = 'Water is blue water only: freshwater drawn from rivers, lakes, and aquifers. Green rainwater (most of food’s footprint) is excluded.' +
+        (hasMediaRows() ? ' Image and video generation are left out of water: no verified figure exists.' : '');
+      if (state.metric === 'carbon' && hasMediaRows()) box.textContent += ' Image and video generation add electricity only (no embodied figure is published).';
     }
 
     function renderWords() {
@@ -1174,13 +1306,18 @@
       let rowsHtml = '', aiDay = 0, aiMin = 0, aiMax = 0, eD = 0, wDay = 0, wMin = 0, wMax = 0;
       for (const r of state.rows) {
         if (!r.count) continue;
-        const md = getModel(r.model);
-        const ct = perPromptTriple(md, r.size, 'carbon');
-        const wt = perPromptTriple(md, r.size, 'water');
+        const kind = rowKind(r);
+        const ct = rowTriple(r, 'carbon');
+        const wt = rowTriple(r, 'water');
         const per = ct[0], d = r.count * per;
-        aiDay += d; aiMin += r.count * ct[1]; aiMax += r.count * ct[2]; eD += r.count * md.sizes[r.size].wh;
+        aiDay += d; aiMin += r.count * ct[1]; aiMax += r.count * ct[2]; eD += r.count * rowUnitEnergy(r)[0];
         wDay += r.count * wt[0]; wMin += r.count * wt[1]; wMax += r.count * wt[2];
-        rowsHtml += '<tr><td>' + escXml(md.name) + '</td><td>' + escXml(sizeLabel(r.model, SIZES.find((x) => x.id === r.size))) + '</td><td class="n">' + r.count + '</td><td class="n">' + fmtCarbon(d) + '</td><td class="n">' + fmtWater(r.count * wt[0]) + '</td></tr>';
+        let name, output;
+        if (kind === 'image') { name = IMAGE_GEN.name; output = IMAGE_GEN.output; }
+        else if (kind === 'video') { const v = getVideoModel(r.model); name = v.name + ' (video)'; output = 'One ' + v.clip; }
+        else { name = getModel(r.model).name; output = sizeLabel(r.model, SIZES.find((x) => x.id === r.size)); }
+        const water = kind === 'text' ? fmtWater(r.count * wt[0]) : 'not estimated';
+        rowsHtml += '<tr><td>' + escXml(name) + '</td><td>' + escXml(output) + '</td><td class="n">' + r.count + '</td><td class="n">' + fmtCarbon(d) + '</td><td class="n">' + water + '</td></tr>';
       }
       const aiYr = aiDay * DAYS, wYr = wDay * DAYS;
       const day = dailyFootprint('carbon');
@@ -1215,9 +1352,10 @@
         '<h1>How my AI use contributes to my carbon emissions and water use</h1>' +
         '<p class="date">Generated ' + date + ', based on exactly the inputs below.</p>' +
         '<h2>1. What I entered</h2>' +
-        '<table><thead><tr><th>Model</th><th>Typical output</th><th class="n">Prompts/day</th><th class="n">CO₂e/day</th><th class="n">Water/day</th></tr></thead><tbody>' +
+        '<table><thead><tr><th>Model</th><th>Typical output</th><th class="n">Per day</th><th class="n">CO₂e/day</th><th class="n">Water/day</th></tr></thead><tbody>' +
         (rowsHtml || '<tr><td colspan="5">No usage entered.</td></tr>') + '</tbody></table>' +
-        '<p class="muted">Per-prompt figures come from the EcoLogits model' + fn(1) + '; the electricity is costed on the ' + escXml(loc.label) + ' grid' + fn(2) + ', and EcoLogits’ embodied hardware emissions are kept.</p>' +
+        '<p class="muted">Per-prompt figures come from the EcoLogits model' + fn(1) + '; the electricity is costed on the ' + escXml(loc.label) + ' grid' + fn(2) + ', and EcoLogits’ embodied hardware emissions are kept.' +
+          (hasMediaRows() ? ' Image generation uses Luccioni et al.’s measured energy per image' + fn(11) + ' and video generation Jegham et al.’s per-clip energy' + fn(12) + ' (the midpoint of the published range for proprietary models); both are electricity only, and water is not estimated for them because no verified figure exists.' : '') + '</p>' +
         '<h2>2. My AI carbon</h2>' +
         '<p>Across these prompts, my AI use comes to about <strong>' + fmtCarbon(aiDay) + ' per day</strong> (range ' + fmtCarbon(aiMin) + ' to ' + fmtCarbon(aiMax) + '), or <strong>' + fmtCarbon(aiYr) + ' per year</strong>, drawing about ' + fmtEnergy(eD) + ' of electricity a day.' + fn(1) + fn(2) + ' The range is EcoLogits’ 95% interval, mostly uncertainty in the parameter counts of closed models.' + fn(1) + '</p>' +
         '<h2>3. How that compares with the rest of my life</h2>' +
@@ -1252,6 +1390,8 @@
     }
     function bindEvents() {
       root.querySelector('#aipf-addrow').addEventListener('click', () => { state.rows.push({ uid: uidSeq++, model: 'gpt-5.5', size: 'chat', count: 1 }); renderRows(); updateOutputs(); });
+      root.querySelector('#aipf-addimage').addEventListener('click', () => { state.rows.push({ uid: uidSeq++, kind: 'image', count: 1 }); renderRows(); updateOutputs(); });
+      root.querySelector('#aipf-addvideo').addEventListener('click', () => { state.rows.push({ uid: uidSeq++, kind: 'video', model: DEFAULT_VIDEO_MODEL, count: 1 }); renderRows(); updateOutputs(); });
       root.querySelector('#aipf-reset').addEventListener('click', () => { setDefaultRows(); renderRows(); updateOutputs(); });
       root.querySelector('#aipf-share').addEventListener('click', (e) => {
         const btn = e.currentTarget;
